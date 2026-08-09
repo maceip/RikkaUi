@@ -13,7 +13,7 @@ Tagline: "Share UI via Compose Multiplatform UI framework"
 ### Modules
 
 - `:foundation` — Theme tokens and design system foundation. Multiplatform: Android, Desktop (JVM), iOS, WasmJs.
-- `:components` — The component library (40+ components). **No Material3 dependency.** Built on `compose.foundation` only. Multiplatform: Android, Desktop (JVM), iOS, WasmJs. Depends on `:foundation`.
+- `:components` — The component library (40+ components). **No Material3 dependency.** Built on `compose.foundation` only. Multiplatform: Android, Desktop (JVM), iOS, WasmJs. Depends on `:foundation`. The `ui/glass/` package is the sole exception to multiplatform: it lives in `androidMain` and pulls `io.github.kyant0:backdrop` (see Package Structure).
 - `:composeApp` — The showcase website. WasmJs (browser). Depends on `:components`.
 - `:feature:docs` — Documentation pages for all components. Depends on `:components`.
 - `:feature:creator` — Design system creator/configurator page.
@@ -37,6 +37,12 @@ foundation/src/commonMain/kotlin/zed/rainxch/rikkaui/foundation/
     RikkaShapes.kt        — 5-level shape scale (sm/md/lg/xl/full) from base radius
     RikkaMotion.kt        — Animation token system (springs, tweens, durations, press scales)
     RikkaElevation.kt     — Shadow elevation scale (none/low/medium/high) for cards, dialogs, sheets, FABs
+    RikkaGlass.kt         — Liquid glass tokens: RikkaGlassLevel record (blur/refraction/dispersion/depth,
+                            tint+saturation+brightness, highlight width/blur/alpha, inner shadow, drop shadow)
+                            + RikkaGlass holder (tint, shadow colours, one scene-wide light angle/intensity/
+                            falloff, press response) + rikkaGlass(isDark), rikkaGlassFor(colors),
+                            RikkaGlassPresets (frosted/crystal/flat), LocalRikkaGlass
+                            Tokens are commonMain (plain numbers); only the *rendering* is Android-only
     RikkaStyle.kt         — RikkaStyle data class + RikkaStylePreset enum (Default/Nova/Vega/Aurora/Nebula)
     RikkaFontFamily.kt    — Font wrapper with rememberRikkaFontFamily() composable
     RikkaTheme.kt         — 4 RikkaTheme overloads + RikkaTheme object (see Theme System section)
@@ -100,7 +106,74 @@ components/src/commonMain/kotlin/zed/rainxch/rikkaui/components/ui/
     icon/Icon.kt           — Foundation-only icon composable (ImageVector + ColorFilter.tint), defaults to LocalContentColor
     icon/RikkaIcons.kt     — 30 Lucide-style icons as lazy ImageVector definitions
     PopupAnimation.kt      — Shared popup animation variants (FadeExpand/Fade/None) used by popover, dropdown, etc.
+
+components/src/androidMain/kotlin/zed/rainxch/rikkaui/components/ui/glass/
+    GlassCapability.kt     — GlassCapability enum (Full/Blur/None) + LocalGlassCapability
+                             + platformGlassCapability() (SDK_INT only) + rememberGlassCapability()
+                             (adds low-RAM, live battery-saver tracking, preview detection)
+    GlassStyle.kt          — GlassLevel enum + LocalGlassDepth + GlassStyle (fully resolved material)
+                             + rememberGlassStyle() + GlassPressState/rememberGlassPressState() + GlassDefaults
+    GlassSurface.kt        — Modifier.glassSurface(backdrop, style, shape, pressFraction, exportedBackdrop,
+                             layerBlock) — the single renderer — + GlassSurface + internal GlassContentScope
+    GlassBackdrop.kt       — LocalGlassBackdrop + rememberGlassBackdrop() + rememberGlassBackdrops(vararg)
+                             + Modifier.glassBackdropSource()
+                             + GlassContainer (records a background layer, provides backdrop + capability,
+                               resets LocalGlassDepth to 0)
+    GlassCard.kt           — Glass card, optionally clickable
+    GlassButton.kt         — GlassButton + GlassIconButton + GlassButtonDefaults
+    GlassPanel.kt          — Floating chrome (nav bars, sheets); hostsGlass = true by default
+    GlassChip.kt           — Pill-shaped chip; selection promotes a level and crossfades the tint
 ```
+
+**Why `androidMain`:** glass is the one Android-only corner of the library. It is
+built on `io.github.kyant0:backdrop`, an Android library — there is no multiplatform
+equivalent, since the effect needs `RenderEffect`/`RuntimeShader`. The *tokens* stay
+in `foundation/commonMain` so other targets can still read them; only rendering is
+platform-bound. Do not try to move these into `commonMain`.
+
+**Glass needs a backdrop.** `LocalGlassBackdrop` defaults to `emptyBackdrop()`, so a
+glass component used outside a `GlassContainer` renders as tint and rim only —
+deliberately a no-op rather than a crash. Glass surfaces must be siblings drawn
+*after* the backdrop source, never children of it.
+
+**Shape gotcha:** `RikkaShapes.*` are typed `Shape`, but backdrop's `lens()` requires
+a `CornerBasedShape` and throws `UnsupportedOperationException` otherwise. Go through
+`GlassDefaults.shape()` / `GlassButtonDefaults.shape()`, which cast safely.
+
+**Version pin:** `backdrop` is held at **1.0.0**. 2.x requires Kotlin 2.3.21.
+
+**Capability tiering, not `SDK_INT` checks.** `GlassCapability` is the single place
+the platform is negotiated: `Full` (API 33+, blur + lens), `Blur` (API 31–32, tint
+and rim strengthened to compensate for the missing refracting edge), `None`. At
+`None` the surface does **not** fall back to tint-only — a 14% white wash over a
+photo is an unreadable smear. It paints an opaque `colors.surface` + `colors.border`
++ elevation shadow instead, i.e. a `Card`. `LocalGlassCapability` is the supported
+override, which is how an app offers a "reduce transparency" setting.
+
+**Never nest glass without going through `LocalGlassDepth`.** Two slabs sampling the
+same backdrop each blur and tint it independently, so the inner one neither refracts
+the outer one nor sits on it. Every glass component publishes `depth + 1`;
+`rememberGlassStyle` steps the level down one rung per level of nesting, halves the
+blur, kills dispersion, and drops the drop shadow. `GlassContainer` resets depth to 0.
+For real layering pass `hostsGlass = true` on the outer surface (`GlassPanel` already
+defaults to it) so it exports what it drew and the inner surface refracts *that*.
+
+**One renderer.** `Modifier.glassSurface(backdrop, style, shape, …)` is the only place
+`drawBackdrop` is called; components resolve a `GlassStyle` via `rememberGlassStyle()`
+and hand it over. Don't add effects inside a component — add a token to
+`RikkaGlassLevel` and consume it in the renderer, so all six components get it.
+
+**Press response is draw-phase only.** `rememberGlassPressState()` returns a
+`pressFraction` lambda (read inside `effects`/`highlight`, which `backdrop` observes
+via `ObserverModifierNode`, so it invalidates draw only) and a `layerBlock`. Pressing
+a glass control recomposes nothing. Don't hoist the press fraction into composition.
+
+**The specular rim's colour is not a token.** `Highlight` takes width/blur/alpha plus
+a `HighlightStyle`; `HighlightStyle.Default(intensity, angle, falloff)` is fixed to
+white with a `Plus` blend, which is what models reflected light. What *is* a token is
+the light's **direction** — `RikkaGlass.lightAngle` is material-wide on purpose, so
+every surface in the app takes its specular from one source. (`HighlightStyle.Plain`
+does accept a colour if you ever need a coloured rim.)
 
 ### Showcase Website Structure
 
@@ -199,6 +272,7 @@ Every theme token is customizable at 3 levels: presets, factory functions, or fu
 - **Spacing:** `rikkaSpacing(base = 4.dp)` — generates proportional scale (xs=1x, sm=2x, md=3x, lg=4x, xl=6x, xxl=8x, xxxl=12x). Presets: `RikkaSpacingPresets.compact()` (3dp), `.comfortable()` (5dp), `.spacious()` (6dp).
 - **Shapes:** `rikkaShapes(radius = 10.dp)` — generates sm/md/lg/xl/full from one base radius. Presets: `RikkaShapesPresets.square()` (0dp), `.sharp()` (4dp), `.rounded()` (16dp), `.pill()` (24dp).
 - **Motion:** `RikkaMotion(...)` with all params having defaults. Presets: `RikkaMotionPresets.snappy()` (no bounce, fast), `.playful()` (bouncy, slow), `.minimal()` (subtle, short).
+- **Glass:** `rikkaGlass(isDark)` or `rikkaGlassFor(colors)` — per-level (`subtle`/`regular`/`prominent`) blur, refraction height/amount, `depthEffect`, `dispersion`, tint alpha, backdrop `saturation`/`brightness`/`vibrancy`, highlight width/blur/alpha, inner shadow, drop shadow. Material-wide: `tint`, `shadowColor`, `innerShadowColor`, `lightAngle`/`lightIntensity`/`lightFalloff`, and the press response (`pressRefraction`/`pressHighlight`/`pressLightShift`). Presets: `RikkaGlassPresets.frosted(isDark)` (heavier blur, no dispersion — safe over busy backdrops), `.crystal(isDark)` (thin blur, max refraction + dispersion), `.flat(isDark)` (tint and rim only, uniform across API levels). `RikkaTheme` takes `glass: RikkaGlass = rikkaGlassFor(colors)` and exposes it as `RikkaTheme.glass`.
 - **Style presets (in `:components` library):** `RikkaStylePreset` enum with type-safe entries. Each entry has a `.style` property returning a `RikkaStyle` data class (shapes + spacing + motion + typeScale). Shortcut properties: `.shapes`, `.spacing`, `.motion`, `.typeScale`, `.label`.
   - `RikkaStylePreset.Default`: radius 10dp, spacing 4dp, balanced motion, scale 1.0
   - `RikkaStylePreset.Nova`: radius 4dp, spacing 3dp, snappy motion, scale 0.9 (sharp, dense)

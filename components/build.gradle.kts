@@ -54,6 +54,14 @@ kotlin {
                 implementation(libs.compose.components.resources)
             }
         }
+
+        androidMain {
+            dependencies {
+                // `api`, not `implementation`: the glass components expose
+                // Backdrop/LayerBackdrop in their public signatures.
+                api(libs.backdrop)
+            }
+        }
     }
 }
 

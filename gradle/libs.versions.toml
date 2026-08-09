@@ -15,6 +15,9 @@ vanniktechMavenPublish = "0.30.0"
 clikt = "5.1.0"
 shadow = "9.0.0"
 kotlinx-serialization = "1.8.1"
+# Liquid glass effects (Android only — the KMP variants of this library require
+# Compose Multiplatform 1.11, which is ahead of the 1.10 this project targets).
+backdrop = "1.0.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -35,6 +38,7 @@ androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

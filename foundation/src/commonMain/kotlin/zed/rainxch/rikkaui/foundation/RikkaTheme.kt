@@ -31,6 +31,7 @@ public fun RikkaTheme(
     shapes: RikkaShapes = rikkaShapes(),
     motion: RikkaMotion = RikkaMotion(),
     elevation: RikkaElevation = RikkaElevation(),
+    glass: RikkaGlass = rikkaGlassFor(colors),
     minTouchTarget: Dp = 48.dp,
     content: @Composable () -> Unit,
 ) {
@@ -42,6 +43,7 @@ public fun RikkaTheme(
         LocalRikkaShapes provides shapes,
         LocalRikkaMotion provides motion,
         LocalRikkaElevation provides elevation,
+        LocalRikkaGlass provides glass,
         LocalMinTouchTarget provides minTouchTarget,
         content = content,
     )
@@ -139,6 +141,9 @@ public fun RikkaTheme(
         spacing = preset.spacing,
         shapes = preset.shapes,
         motion = preset.motion,
+        // `isDark` is known here, so use it directly rather than inferring
+        // the mode from background luminance.
+        glass = rikkaGlass(isDark),
         content = content,
     )
 }
@@ -185,6 +190,11 @@ public object RikkaTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalRikkaElevation.current
+
+    public val glass: RikkaGlass
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalRikkaGlass.current
 
     public val minTouchTarget: Dp
         @Composable
