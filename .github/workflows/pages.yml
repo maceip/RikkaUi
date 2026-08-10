@@ -17,7 +17,11 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Pinned, not latest: verifyPaparazziDebug compares against goldens recorded
+    # on a maintainer's machine, so the runner's font rasterisation is part of
+    # the contract. A silent image bump would surface as a snapshot failure with
+    # no commit to blame, which is the worst way to learn about it.
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out the pushed branch
         uses: actions/checkout@v4
