@@ -32,7 +32,7 @@ import zed.rainxch.rikkaui.foundation.RikkaTheme
  * Documentation page for the NavigationBar component.
  *
  * Demonstrates bottom navigation with icon items, animation
- * variants, and the convenience ImageVector overload.
+ * variants, and the convenience semantic IconToken overload.
  */
 @Composable
 fun NavigationBarDoc() {
@@ -260,7 +260,7 @@ private fun NavigationBarApiTab() {
                 ),
                 PropInfo(
                     "icon",
-                    "ImageVector",
+                    "IconToken",
                     "required",
                     stringResource(Res.string.nav_bar_prop_icon_desc),
                 ),
@@ -278,7 +278,7 @@ private fun NavigationBarApiTab() {
                 ),
                 PropInfo(
                     "selectedIcon",
-                    "ImageVector?",
+                    "IconToken?",
                     "null",
                     stringResource(Res.string.nav_bar_prop_selected_icon_desc),
                 ),

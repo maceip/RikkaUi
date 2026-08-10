@@ -65,10 +65,17 @@ dependencies {
 ```
 
 ```kotlin
-RikkaTheme {
-    Button(text = "Get Started", onClick = { })
+ProvideIconPack(PhosphorPack.Regular) {
+    RikkaTheme {
+        Button(text = "Get Started", onClick = { })
+    }
 }
 ```
+
+RikkaUI exposes the RikkaIcons core tokens and the Phosphor pack transitively.
+Phosphor is the only pack selected by this design system; choose `Regular`,
+`Bold`, or `Fill` once at the application root and use semantic `AppIcon`
+tokens inside the app.
 
 > Works out of the box for native Android projects — no KMP setup needed.
 > For Compose Multiplatform, add to your `commonMain` source set.

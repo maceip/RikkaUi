@@ -325,7 +325,7 @@ private fun FabApiTab() {
             listOf(
                 PropInfo(
                     "icon",
-                    "ImageVector",
+                    "IconToken",
                     "-",
                     stringResource(Res.string.fab_prop_icon_desc),
                 ),

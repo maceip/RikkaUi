@@ -125,7 +125,7 @@ fun FileExplorerExample() {
 
 @Composable
 private fun FileRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: zed.rainxch.rikkaicons.core.IconToken,
     iconDesc: String,
     name: String,
     size: String,

@@ -14,3 +14,6 @@ buildSrc/.gradle/
 RELEASE_NOTES.md
 
 .claude/worktrees/
+
+# Vendored JS deps for the gallery renderer
+gallery/node_modules/

@@ -324,7 +324,7 @@ private fun AccordionApiTab() {
                 ),
                 PropInfo(
                     "chevronIcon",
-                    "ImageVector",
+                    "IconToken",
                     "RikkaIcons.ChevronRight",
                     stringResource(Res.string.accordion_prop_chevron_desc),
                 ),

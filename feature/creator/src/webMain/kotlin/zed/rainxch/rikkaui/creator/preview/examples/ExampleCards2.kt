@@ -373,7 +373,7 @@ fun ExampleFileManager(modifier: Modifier = Modifier) {
 
 @Composable
 private fun FileRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: zed.rainxch.rikkaicons.core.IconToken,
     name: String,
     size: String,
 ) {
@@ -615,7 +615,7 @@ fun ExampleSearchCommand(modifier: Modifier = Modifier) {
 
 @Composable
 private fun CommandRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: zed.rainxch.rikkaicons.core.IconToken,
     label: String,
     shortcut: String,
 ) {

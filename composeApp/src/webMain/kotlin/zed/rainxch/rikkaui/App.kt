@@ -70,15 +70,19 @@ import zed.rainxch.rikkaui.navigation.NavEntry
 import zed.rainxch.rikkaui.navigation.resolveInitialRoute
 import zed.rainxch.rikkaui.theme.ThemeStore
 import zed.rainxch.rikkaui.utils.ThemeUtils
+import zed.rainxch.rikkaicons.core.ProvideIconPack
+import zed.rainxch.rikkaicons.pack.phosphor.PhosphorPack
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalBrowserHistoryApi::class)
 fun main() =
     ComposeViewport {
-        App(
-            onNavHostReady = {
-                it.bindToBrowserNavigation()
-            },
-        )
+        ProvideIconPack(PhosphorPack.Regular) {
+            App(
+                onNavHostReady = {
+                    it.bindToBrowserNavigation()
+                },
+            )
+        }
     }
 
 @Composable

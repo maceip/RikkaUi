@@ -321,7 +321,7 @@ private fun PhilosophyGrid(sizeClass: WindowSizeClass) {
 }
 
 private data class PhilosophyItem(
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val icon: zed.rainxch.rikkaicons.core.IconToken,
     val title: String,
     val body: String,
 )

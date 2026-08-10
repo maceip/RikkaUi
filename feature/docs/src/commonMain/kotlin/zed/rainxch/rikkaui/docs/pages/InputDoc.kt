@@ -216,13 +216,13 @@ private fun InputApiTab() {
                 ),
                 PropInfo(
                     "leadingIcon",
-                    "ImageVector?",
+                    "IconToken?",
                     "null",
                     stringResource(Res.string.input_prop_leading_icon_desc),
                 ),
                 PropInfo(
                     "trailingIcon",
-                    "ImageVector?",
+                    "IconToken?",
                     "null",
                     stringResource(Res.string.input_prop_trailing_icon_desc),
                 ),
