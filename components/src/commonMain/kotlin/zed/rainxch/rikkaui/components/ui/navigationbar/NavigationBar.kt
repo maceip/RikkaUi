@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.components.ui.icon.Icon
+import zed.rainxch.rikkaui.components.ui.icon.IconSize
 import zed.rainxch.rikkaui.components.ui.text.Text
 import zed.rainxch.rikkaui.components.ui.text.TextVariant
 import zed.rainxch.rikkaui.foundation.RikkaTheme
@@ -56,6 +57,25 @@ public enum class NavigationBarAnimation {
 
     /** Instant, no animation. */
     None,
+}
+
+// ─── Layout ───────────────────────────────────────────────────
+
+/** How a [NavigationBarItem] arranges its icon against its label. */
+public enum class NavigationBarItemLayout {
+    /**
+     * Icon above the label, indicator pill behind the icon alone. The taller of
+     * the two, and the default.
+     */
+    Stacked,
+
+    /**
+     * Icon and label on one row, indicator pill wrapping both. Use this where
+     * the bar is a short floating pill rather than a full-width dock: a stacked
+     * item needs roughly 56dp of height before the label clears the icon, which
+     * a 64dp pill cannot give it without the text crowding the edge.
+     */
+    Inline,
 }
 
 // ─── NavigationBar ────────────────────────────────────────────
@@ -127,6 +147,13 @@ public fun NavigationBar(
  * @param alwaysShowLabel Whether to always show the label or only when selected. Defaults to true.
  * @param animation [NavigationBarAnimation] style for state transitions. Defaults to [NavigationBarAnimation.Spring].
  * @param indicatorColor Color of the selection indicator pill. Defaults to [RikkaTheme.colors.secondary] when [Color.Unspecified].
+ * @param layout Whether the icon sits above the label or beside it. See [NavigationBarItemLayout].
+ * @param iconSlotSize Side of the square the icon is laid out in. Raise it with
+ *   the icon itself; an icon larger than its slot is constrained down to fit.
+ * @param showIndicator Whether the item draws its own selection pill. Turn it off
+ *   when the bar owns the indicator instead of the item: `GlassNavigationBar`
+ *   (Android only) travels a single pill between tabs, and a per-item pill
+ *   underneath it would double up.
  */
 @Composable
 public fun RowScope.NavigationBarItem(
@@ -140,6 +167,9 @@ public fun RowScope.NavigationBarItem(
     alwaysShowLabel: Boolean = true,
     animation: NavigationBarAnimation = NavigationBarAnimation.Spring,
     indicatorColor: Color = Color.Unspecified,
+    layout: NavigationBarItemLayout = NavigationBarItemLayout.Stacked,
+    iconSlotSize: Dp = 24.dp,
+    showIndicator: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -165,12 +195,15 @@ public fun RowScope.NavigationBarItem(
         }
 
     // ─── Indicator animation ─────────────────────────────
+    // Both branches drive the pill off these two values, so suppressing it for a
+    // bar that owns its own indicator is a matter of never raising them.
+    val indicatorVisible = selected && showIndicator
     val indicatorWidth by animateDpAsState(
-        targetValue = if (selected) 48.dp else 0.dp,
+        targetValue = if (indicatorVisible) 48.dp else 0.dp,
         animationSpec = dpAnimSpec,
     )
     val indicatorAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
+        targetValue = if (indicatorVisible) 1f else 0f,
         animationSpec = floatAnimSpec,
     )
 
@@ -226,67 +259,108 @@ public fun RowScope.NavigationBarItem(
                 },
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // ─── Icon with indicator ─────────────────
-            Box(
-                contentAlignment = Alignment.Center,
-            ) {
-                // Indicator pill behind icon
-                Box(
-                    modifier =
-                        Modifier
-                            .width(indicatorWidth)
-                            .height(32.dp)
-                            .graphicsLayer { alpha = indicatorAlpha }
-                            .background(
-                                color = resolvedIndicator,
-                                shape = RikkaTheme.shapes.full,
-                            ),
-                )
-
-                // Hover highlight
-                if (hoverAlpha > 0f) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .width(48.dp)
-                                .height(32.dp)
-                                .graphicsLayer { alpha = hoverAlpha }
-                                .background(
-                                    color = colors.muted,
-                                    shape = RikkaTheme.shapes.full,
-                                ),
-                    )
-                }
-
-                // Icon
-                Box(
-                    modifier = Modifier.size(24.dp),
-                    contentAlignment = Alignment.Center,
+        when (layout) {
+            NavigationBarItemLayout.Stacked ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
                 ) {
-                    if (selected && selectedIcon != null) {
-                        selectedIcon()
-                    } else {
-                        icon()
+                    // ─── Icon with indicator ─────────────────
+                    Box(
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        // Indicator pill behind icon
+                        Box(
+                            modifier =
+                                Modifier
+                                    .width(indicatorWidth)
+                                    .height(32.dp)
+                                    .graphicsLayer { alpha = indicatorAlpha }
+                                    .background(
+                                        color = resolvedIndicator,
+                                        shape = RikkaTheme.shapes.full,
+                                    ),
+                        )
+
+                        // Hover highlight
+                        if (hoverAlpha > 0f) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .width(48.dp)
+                                        .height(32.dp)
+                                        .graphicsLayer { alpha = hoverAlpha }
+                                        .background(
+                                            color = colors.muted,
+                                            shape = RikkaTheme.shapes.full,
+                                        ),
+                            )
+                        }
+
+                        // Icon
+                        Box(
+                            modifier = Modifier.size(iconSlotSize),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (selected && selectedIcon != null) {
+                                selectedIcon()
+                            } else {
+                                icon()
+                            }
+                        }
+                    }
+
+                    // ─── Label ───────────────────────────────
+                    if (label != null) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(top = RikkaTheme.spacing.xs)
+                                    .offset { IntOffset(x = 0, y = labelOffset.roundToPx()) }
+                                    .graphicsLayer { alpha = labelAlpha },
+                        ) {
+                            label()
+                        }
                     }
                 }
-            }
 
-            // ─── Label ───────────────────────────────
-            if (label != null) {
-                Box(
+            // Inline wraps icon *and* label, so the pill is a background on the
+            // row rather than a sized box behind the icon: its width comes from
+            // the content and needs no animation of its own.
+            NavigationBarItemLayout.Inline ->
+                Row(
                     modifier =
                         Modifier
-                            .padding(top = RikkaTheme.spacing.xs)
-                            .offset { IntOffset(x = 0, y = labelOffset.roundToPx()) }
-                            .graphicsLayer { alpha = labelAlpha },
+                            .background(
+                                color = resolvedIndicator.copy(alpha = indicatorAlpha),
+                                shape = RikkaTheme.shapes.full,
+                            ).background(
+                                color = colors.muted.copy(alpha = hoverAlpha),
+                                shape = RikkaTheme.shapes.full,
+                            ).padding(
+                                horizontal = RikkaTheme.spacing.md,
+                                vertical = RikkaTheme.spacing.sm,
+                            ),
+                    horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    label()
+                    Box(
+                        modifier = Modifier.size(iconSlotSize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (selected && selectedIcon != null) {
+                            selectedIcon()
+                        } else {
+                            icon()
+                        }
+                    }
+
+                    if (label != null && showLabel) {
+                        Box(modifier = Modifier.graphicsLayer { alpha = labelAlpha }) {
+                            label()
+                        }
+                    }
                 }
-            }
         }
     }
 }
@@ -311,6 +385,12 @@ public fun RowScope.NavigationBarItem(
  * @param indicatorColor Color of the selection indicator pill. Defaults to [RikkaTheme.colors.secondary] when [Color.Unspecified].
  * @param activeColor Icon and label color when selected. Defaults to [RikkaTheme.colors.primary] when [Color.Unspecified].
  * @param inactiveColor Icon and label color when not selected. Defaults to [RikkaTheme.colors.onMuted] when [Color.Unspecified].
+ * @param layout Whether the icon sits above the label or beside it. See [NavigationBarItemLayout].
+ * @param iconSize Size of the icon glyph and of the slot it is laid out in. Defaults to [IconSize.Default].
+ * @param showIndicator Whether the item draws its own selection pill. Turn it off
+ *   when the bar owns the indicator instead of the item: `GlassNavigationBar`
+ *   (Android only) travels a single pill between tabs, and a per-item pill
+ *   underneath it would double up.
  */
 @Composable
 public fun RowScope.NavigationBarItem(
@@ -326,6 +406,9 @@ public fun RowScope.NavigationBarItem(
     indicatorColor: Color = Color.Unspecified,
     activeColor: Color = Color.Unspecified,
     inactiveColor: Color = Color.Unspecified,
+    layout: NavigationBarItemLayout = NavigationBarItemLayout.Stacked,
+    iconSize: IconSize = IconSize.Default,
+    showIndicator: Boolean = true,
 ) {
     val colors = RikkaTheme.colors
     val motion = RikkaTheme.motion
@@ -365,6 +448,7 @@ public fun RowScope.NavigationBarItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
+                size = iconSize,
             )
         },
         modifier =
@@ -385,6 +469,7 @@ public fun RowScope.NavigationBarItem(
                         imageVector = selectedIcon,
                         contentDescription = null,
                         tint = iconColor,
+                        size = iconSize,
                     )
                 }
             } else {
@@ -393,6 +478,7 @@ public fun RowScope.NavigationBarItem(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
+                        size = iconSize,
                     )
                 }
             },
@@ -400,6 +486,9 @@ public fun RowScope.NavigationBarItem(
         alwaysShowLabel = alwaysShowLabel,
         animation = animation,
         indicatorColor = indicatorColor,
+        layout = layout,
+        iconSlotSize = iconSize.dp,
+        showIndicator = showIndicator,
     )
 }
 
