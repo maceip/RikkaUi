@@ -44,7 +44,9 @@ import androidx.compose.ui.unit.dp
  * @property saturation Saturation multiplier applied to the backdrop. `1f` is
  *   neutral; above it, colours behind the glass bloom.
  * @property brightness Brightness offset applied to the backdrop, in `-1f..1f`.
- *   Negative darkens — use it under light content, positive under dark content.
+ *   Negative darkens, positive lifts. Prefer `0f` over dark [RikkaScenery] —
+ *   darkening flattens the colour variance refraction needs. Use tint/frost for
+ *   legibility instead.
  * @property vibrancy Whether the tuned vibrancy grade is applied on top of
  *   [saturation] and [brightness].
  * @property highlightAlpha Opacity of the specular rim highlight.
