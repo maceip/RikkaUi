@@ -38,8 +38,10 @@ jobs:
           cache: npm
           cache-dependency-path: gallery/package-lock.json
 
-      - name: Build the Compose/Wasm application
-        run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+      # The gallery rasterizes this build immediately; production Binaryen -O3
+      # adds several minutes without changing any captured pixels.
+      - name: Build the Compose/Wasm capture application
+        run: ./gradlew :composeApp:wasmJsBrowserDevelopmentExecutableDistribution --no-daemon
 
       - name: Record Android component bitmaps
         run: ./gradlew :sample:recordPaparazziDebug --no-daemon --no-configuration-cache
@@ -53,7 +55,7 @@ jobs:
       - name: Capture Compose components and assemble the gallery
         run: |
           mkdir -p build/gallery-site/app
-          cp -R composeApp/build/dist/wasmJs/productionExecutable/. build/gallery-site/app/
+          cp -R composeApp/build/dist/wasmJs/developmentExecutable/. build/gallery-site/app/
           python3 -m http.server 4173 --directory build/gallery-site/app >/tmp/rikkaui-gallery-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT

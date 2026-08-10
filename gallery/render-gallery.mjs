@@ -57,7 +57,18 @@ const androidSnapshotNames = {
 };
 
 const browser = await chromium.launch({ headless: true });
+const renderers = new Map();
 try {
+  for (const device of devices) {
+    const context = await browser.newContext({
+      viewport: { width: device.width, height: device.height },
+      deviceScaleFactor: 1,
+      colorScheme: "light",
+      reducedMotion: "reduce",
+    });
+    renderers.set(device.id, { context, page: await context.newPage() });
+  }
+
   for (const component of components) {
     for (const device of devices) {
       if (component.platform === "android") {
@@ -70,13 +81,7 @@ try {
         );
         continue;
       }
-      const context = await browser.newContext({
-        viewport: { width: device.width, height: device.height },
-        deviceScaleFactor: 1,
-        colorScheme: "light",
-        reducedMotion: "reduce",
-      });
-      const page = await context.newPage();
+      const { page } = renderers.get(device.id);
       const url = `${baseUrl}/#docs/components?componentId=${encodeURIComponent(component.id)}`;
       await page.goto(url, { waitUntil: "networkidle", timeout: 120_000 });
       await page.locator("canvas").waitFor({ state: "visible", timeout: 120_000 });
@@ -86,11 +91,11 @@ try {
         type: "png",
         animations: "disabled",
       });
-      await context.close();
     }
     process.stdout.write(`Captured ${component.name}\n`);
   }
 } finally {
+  await Promise.all([...renderers.values()].map(({ context }) => context.close()));
   await browser.close();
 }
 

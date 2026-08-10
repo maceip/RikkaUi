@@ -45,6 +45,8 @@ import rikkaui.composeapp.generated.resources.Res
 import rikkaui.composeapp.generated.resources.app_name
 import rikkaui.composeapp.generated.resources.github
 import rikkaui.composeapp.generated.resources.toggle_dark_mode
+import zed.rainxch.rikkaicons.core.ProvideIconPack
+import zed.rainxch.rikkaicons.pack.phosphor.PhosphorPack
 import zed.rainxch.rikkaui.app.AppAction
 import zed.rainxch.rikkaui.app.AppViewModel
 import zed.rainxch.rikkaui.app.LocalAppState
@@ -70,8 +72,6 @@ import zed.rainxch.rikkaui.navigation.NavEntry
 import zed.rainxch.rikkaui.navigation.resolveInitialRoute
 import zed.rainxch.rikkaui.theme.ThemeStore
 import zed.rainxch.rikkaui.utils.ThemeUtils
-import zed.rainxch.rikkaicons.core.ProvideIconPack
-import zed.rainxch.rikkaicons.pack.phosphor.PhosphorPack
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalBrowserHistoryApi::class)
 fun main() =
