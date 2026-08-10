@@ -43,8 +43,11 @@ jobs:
       - name: Build the Compose/Wasm capture application
         run: ./gradlew :composeApp:wasmJsBrowserDevelopmentExecutableDistribution --no-daemon
 
-      - name: Record Android component bitmaps
-        run: ./gradlew :sample:recordPaparazziDebug --no-daemon --no-configuration-cache
+      # Verify rather than record: the committed goldens are what the gallery
+      # publishes, so a drifted snapshot has to fail the build instead of being
+      # silently overwritten by the run that consumes it.
+      - name: Verify Android component bitmaps
+        run: ./gradlew :sample:verifyPaparazziDebug --no-daemon --no-configuration-cache
 
       - name: Install the gallery renderer
         working-directory: gallery

@@ -12,6 +12,8 @@ class GalleryPhoneSnapshotTest {
         Paparazzi(
             deviceConfig = DeviceConfig.PIXEL_9_PRO,
             theme = "android:Theme.Material.Light.NoActionBar",
+            // Absorbs per-platform antialiasing drift; see GlassSnapshotTest.
+            maxPercentDifference = 0.5,
         )
 
     @Test
@@ -37,6 +39,8 @@ class GalleryFoldSnapshotTest {
         Paparazzi(
             deviceConfig = DeviceConfig.PIXEL_9_PRO_FOLD,
             theme = "android:Theme.Material.Light.NoActionBar",
+            // Absorbs per-platform antialiasing drift; see GlassSnapshotTest.
+            maxPercentDifference = 0.5,
         )
 
     @Test
