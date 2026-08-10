@@ -110,6 +110,11 @@ const cards = components
           </div>
           <a href="app/#docs/components?componentId=${encodeURIComponent(component.id)}">Open live docs <span aria-hidden="true">↗</span></a>
         </div>
+        ${
+          component.platform === "android"
+            ? `<p class="caveat">Captured through layoutlib, which has no GPU pipeline. Blur, refraction, dispersion and the specular rim are absent from this image and appear only on a device.</p>`
+            : ""
+        }
         <div class="devices">
           ${devices
             .map(
@@ -121,7 +126,7 @@ const cards = components
                     <div class="screen">
                       <img
                         src="assets/previews/${component.id}--${device.id}.png"
-                        alt="${escapeHtml(component.name)} rendered by Compose at the ${escapeHtml(device.label)} viewport"
+                        alt="${escapeHtml(component.name)} rendered by ${component.platform === "android" ? "layoutlib" : "Compose"} at the ${escapeHtml(device.label)} viewport"
                         loading="lazy"
                         width="${device.width}"
                         height="${device.height}"

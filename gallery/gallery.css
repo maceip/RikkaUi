@@ -70,6 +70,17 @@ nav, footer {
   text-transform: uppercase;
 }
 
+.caveat {
+  margin: 0 0 20px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
 h1 {
   max-width: 900px;
   margin: 0;
