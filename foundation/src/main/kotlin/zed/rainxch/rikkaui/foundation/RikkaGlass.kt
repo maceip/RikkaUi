@@ -164,10 +164,14 @@ public data class RikkaGlass(
 /**
  * Builds the default glass material for a light or dark palette.
  *
- * Dark glass leans on a lighter tint and a stronger rim highlight, because a
- * dark blurred backdrop gives the edge far less contrast to work with. It also
- * *darkens* what shows through rather than only washing over it, so light
- * content stays legible over a bright photo.
+ * Dark glass leans on a stronger rim highlight and frost, because a dark
+ * blurred backdrop gives the edge far less contrast to work with. Legibility
+ * comes from tint and frost — not from darkening the backdrop. A negative
+ * brightness grade flattens exactly the colour variance a 12–44dp lens needs
+ * to read as refraction when the scene is [RikkaScenery].
+ *
+ * Light glass keeps a small positive brightness so content stays lifted over
+ * pale washes without crushing chroma.
  *
  * @param isDark Whether the surrounding palette is dark.
  */
@@ -188,7 +192,9 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 dispersion = false,
                 tintAlpha = if (isDark) 0.10f else 0.22f,
                 saturation = 1.2f,
-                brightness = if (isDark) -0.02f else 0.02f,
+                // Dark: neutral so scenery chroma survives the grade. Light: a
+                // slight lift over pale washes.
+                brightness = if (isDark) 0f else 0.02f,
                 highlightAlpha = if (isDark) 0.30f else 0.45f,
                 highlightWidth = 0.5.dp,
                 highlightBlurRadius = 0.25.dp,
@@ -210,7 +216,7 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 dispersion = true,
                 tintAlpha = if (isDark) 0.14f else 0.30f,
                 saturation = 1.5f,
-                brightness = if (isDark) -0.04f else 0.04f,
+                brightness = if (isDark) 0f else 0.04f,
                 highlightAlpha = if (isDark) 0.45f else 0.60f,
                 highlightWidth = 0.75.dp,
                 highlightBlurRadius = 0.5.dp,
@@ -230,7 +236,7 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 dispersion = true,
                 tintAlpha = if (isDark) 0.18f else 0.38f,
                 saturation = 1.8f,
-                brightness = if (isDark) -0.06f else 0.06f,
+                brightness = if (isDark) 0f else 0.06f,
                 highlightAlpha = if (isDark) 0.55f else 0.72f,
                 highlightWidth = 1.dp,
                 highlightBlurRadius = 0.75.dp,
