@@ -114,6 +114,15 @@ public object IncomingCallSheetDefaults {
  * @param visible Whether the sheet is shown; drives the slide-and-fade transition.
  * @param backdrop What shows through the sheet; from [LocalGlassBackdrop] by default.
  * @param header Optional slot replacing the default avatar-and-name header.
+ * @param content Optional slot for call state the sheet cannot know about —
+ *   screening status, a carrier-capability notice, an expandable automation
+ *   panel. Sits between the transcript and the actions, in the sheet's own
+ *   column spacing.
+ * @param actions Optional slot replacing the default decline-then-answer row.
+ *   A call that has to be decided from the lock screen, or one whose actions are
+ *   gated with a reason, needs different controls in that position; everything
+ *   above it stays the same. When supplied, [onAnswer], [onDecline] and their
+ *   labels are the slot's to use or ignore.
  */
 @Composable
 public fun IncomingCallSheet(
@@ -130,6 +139,8 @@ public fun IncomingCallSheet(
     visible: Boolean = true,
     backdrop: Backdrop = LocalGlassBackdrop.current,
     header: (@Composable ColumnScope.() -> Unit)? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
+    actions: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val colors = RikkaTheme.colors
     val spacing = RikkaTheme.spacing
@@ -173,33 +184,39 @@ public fun IncomingCallSheet(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.md),
-                ) {
-                    GlassButton(
-                        onClick = onDecline,
-                        modifier = Modifier.weight(1f),
-                        level = GlassLevel.Regular,
-                        tint = colors.destructive,
-                        treatment = GlassTreatment.Smoked,
-                        contentColor = colors.onDestructive,
-                        label = declineLabel,
+                content?.invoke(this)
+
+                if (actions != null) {
+                    actions()
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     ) {
-                        Icon(imageVector = RikkaIcons.X, contentDescription = null)
-                        Text(text = declineLabel)
-                    }
-                    GlassButton(
-                        onClick = onAnswer,
-                        modifier = Modifier.weight(1f),
-                        level = GlassLevel.Regular,
-                        tint = colors.success,
-                        treatment = GlassTreatment.Smoked,
-                        contentColor = colors.onSuccess,
-                        label = answerLabel,
-                    ) {
-                        Icon(imageVector = RikkaIcons.Phone, contentDescription = null)
-                        Text(text = answerLabel)
+                        GlassButton(
+                            onClick = onDecline,
+                            modifier = Modifier.weight(1f),
+                            level = GlassLevel.Regular,
+                            tint = colors.destructive,
+                            treatment = GlassTreatment.Smoked,
+                            contentColor = colors.onDestructive,
+                            label = declineLabel,
+                        ) {
+                            Icon(imageVector = RikkaIcons.X, contentDescription = null)
+                            Text(text = declineLabel)
+                        }
+                        GlassButton(
+                            onClick = onAnswer,
+                            modifier = Modifier.weight(1f),
+                            level = GlassLevel.Regular,
+                            tint = colors.success,
+                            treatment = GlassTreatment.Smoked,
+                            contentColor = colors.onSuccess,
+                            label = answerLabel,
+                        ) {
+                            Icon(imageVector = RikkaIcons.Phone, contentDescription = null)
+                            Text(text = answerLabel)
+                        }
                     }
                 }
             }
