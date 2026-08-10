@@ -67,10 +67,7 @@ fun GlassScene(
 ) {
     RikkaTheme(palette = RikkaPalette.Zinc, isDark = isDark) {
         ProvideIconPack(PhosphorPack.Regular) {
-        GlassContainer(
-            modifier = Modifier.fillMaxSize(),
-            background = { DemoBackdrop() },
-        ) {
+        GlassContainer(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(20.dp),
                 contentAlignment = Alignment.Center,

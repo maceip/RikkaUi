@@ -105,16 +105,18 @@ public fun Modifier.glassBackdropSource(backdrop: LayerBackdrop): Modifier = lay
  * }
  * ```
  *
- * @param background Content recorded as the backdrop; drawn first, sized to the container.
  * @param modifier [Modifier] applied to the root Box.
+ * @param background Content recorded as the backdrop; drawn first, sized to the
+ *   container. Defaults to [GlassScenery] — a scene built to be refracted.
+ *   Replacing it with a flat wash is what makes glass stop reading as glass.
  * @param backdrop The layer recording to write into; supply your own to share it across containers.
  * @param capability Glass tier for everything inside; detected from the device by default.
  * @param content Foreground content drawn over the backdrop, with [LocalGlassBackdrop] provided.
  */
 @Composable
 public fun GlassContainer(
-    background: @Composable BoxScope.() -> Unit,
     modifier: Modifier = Modifier,
+    background: @Composable BoxScope.() -> Unit = { GlassScenery() },
     backdrop: LayerBackdrop = rememberGlassBackdrop(),
     capability: GlassCapability = rememberGlassCapability(),
     content: @Composable BoxScope.() -> Unit,
