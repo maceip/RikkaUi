@@ -23,7 +23,6 @@ plugins {
     alias(libs.plugins.kotlinAndroid) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.gradle.ktlint)
-    alias(libs.plugins.vanniktechMavenPublish) apply false
 }
 
 subprojects {
@@ -31,7 +30,6 @@ subprojects {
         tasks.configureEach {
             when (name) {
                 "preBuild",
-                "wasmJsBrowserDevelopmentExecutableDistribution",
                 -> {
                     val ktlintFormat = tasks.findByName("ktlintFormat")
                     if (ktlintFormat != null) dependsOn(ktlintFormat)

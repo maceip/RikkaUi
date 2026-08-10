@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "dev.rikkaui.sample"
-        minSdk = 24
+        minSdk = 33
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -40,14 +40,15 @@ dependencies {
     implementation(projects.components)
     implementation(projects.foundation)
 
-    implementation(libs.compose.runtime)
-    implementation(libs.compose.foundation)
-    implementation(libs.compose.ui)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.activity.compose)
 
     // Preview annotation + the renderer Android Studio uses for the preview pane.
-    implementation(libs.compose.uiToolingPreview)
-    debugImplementation(libs.compose.uiTooling)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
 }

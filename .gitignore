@@ -17,3 +17,7 @@ RELEASE_NOTES.md
 
 # Vendored JS deps for the gallery renderer
 gallery/node_modules/
+
+# Machine-local SDK path; must never be committed (it broke every Android build
+# in this repo by pointing at a checkout that only existed on one laptop).
+local.properties

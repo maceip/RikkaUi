@@ -28,10 +28,6 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
 include(":components")
 include(":foundation")
-include(":feature:creator")
-include(":feature:docs")
-include(":cli")
 include(":sample")

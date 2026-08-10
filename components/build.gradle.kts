@@ -1,96 +1,53 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.gradle.ktlint)
-    alias(libs.plugins.vanniktechMavenPublish)
 }
 
 android {
     namespace = "dev.rikkaui.components"
     compileSdk = 35
     defaultConfig {
-        minSdk = 24
+        // Liquid glass needs the AGSL refraction shader, which is API 33.
+        // Below that the material cannot exist, so this is the floor.
+        minSdk = 33
+    }
+    buildFeatures {
+        compose = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
 kotlin {
     explicitApi()
+    jvmToolchain(21)
+}
 
-    androidTarget {
-        publishLibraryVariants("release")
-    }
+dependencies {
+    api(platform(libs.androidx.compose.bom))
+    api(projects.foundation)
+    api(libs.androidx.compose.runtime)
+    api(libs.androidx.compose.ui)
+    api(libs.androidx.compose.foundation)
 
-    jvm("desktop")
+    // RikkaUI owns the semantic icon contract. Consumers choose the supported
+    // Phosphor weight at their composition root.
+    api(libs.rikka.icons.core)
+    api(libs.rikka.icons.tokens.core)
+    api(libs.rikka.icons.pack.phosphor)
 
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-    }
-    js {
-        browser()
-    }
-
-    applyDefaultHierarchyTemplate()
-
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.compose.runtime)
-                implementation(libs.compose.foundation)
-                implementation(projects.foundation)
-                implementation(libs.compose.ui)
-                implementation(libs.compose.components.resources)
-                // RikkaUI owns the semantic icon contract. Consumers choose
-                // the supported Phosphor weight at their composition root.
-                api(libs.rikka.icons.core)
-                api(libs.rikka.icons.tokens.core)
-                api(libs.rikka.icons.pack.phosphor)
-            }
-        }
-
-        androidMain {
-            dependencies {
-                // `api`, not `implementation`: the glass components expose
-                // Backdrop/LayerBackdrop in their public signatures.
-                api(libs.backdrop)
-                // `implementation`: both are wrapped behind RikkaUI types
-                // (GlassSwipeAction, TranscriptText) so neither leaks into a
-                // public signature. Copy-paste consumers get them listed as
-                // registry dependencies instead.
-                implementation(libs.swipe)
-                implementation(libs.extendedspans)
-            }
-        }
-    }
+    // `api`: the glass components expose Backdrop/LayerBackdrop in their signatures.
+    api(libs.backdrop)
+    // `implementation`: wrapped behind GlassSwipeAction and TranscriptText, so
+    // neither reaches a public signature.
+    implementation(libs.swipe)
+    implementation(libs.extendedspans)
 }
 
 ktlint {
     ignoreFailures = true
-}
-
-signing {
-    useInMemoryPgpKeys(
-        findProperty("signingInMemoryKeyId") as String?,
-        findProperty("signingInMemoryKey") as String?,
-        findProperty("signingInMemoryKeyPassword") as String?,
-    )
-}
-
-mavenPublishing {
-    pom {
-        name = "RikkaUI Components"
-        description = "40+ styled UI components for Compose Multiplatform — foundation-only, no Material3"
-    }
 }
