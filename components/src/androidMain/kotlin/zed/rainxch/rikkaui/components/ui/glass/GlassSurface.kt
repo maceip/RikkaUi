@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
@@ -33,8 +36,19 @@ import com.kyant.backdrop.shadow.Shadow
 import zed.rainxch.rikkaui.foundation.LocalContentColor
 import zed.rainxch.rikkaui.foundation.LocalTextStyle
 import zed.rainxch.rikkaui.foundation.RikkaTheme
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val AtRest: () -> Float = { 0f }
+
+private val DEGREES_TO_RADIANS: Float = (PI / 180.0).toFloat()
+
+/** How far the dome's poles sit from the centre, as a fraction of the surface. */
+private const val DOME_POLE_OFFSET: Float = 0.32f
+
+/** Dome gradient reach, as a fraction of the surface's longest dimension. */
+private const val DOME_RADIUS_SCALE: Float = 0.72f
 
 // ─── Modifier ───────────────────────────────────────────────
 
@@ -42,7 +56,8 @@ private val AtRest: () -> Float = { 0f }
  * Draws the liquid glass material behind this node.
  *
  * The contributions stack in the order light would meet them: the backdrop is
- * graded, blurred, and refracted; a tint washes over the result; then an inner
+ * graded, blurred, and refracted; a tint washes over the result; a dome gradient
+ * curves the face and a frosted band closes off the bottom edge; then an inner
  * shadow gives the slab thickness and a specular rim plus drop shadow seat it in
  * space.
  *
@@ -154,6 +169,69 @@ public fun Modifier.glassSurface(
         onDrawSurface = {
             if (style.tint.isSpecified && tokens.tintAlpha > 0f) {
                 drawRect(style.tint.copy(alpha = tokens.tintAlpha))
+            }
+
+            // Dome. The lens shader bends only the edge band, so the face of the
+            // slab stays optically flat and reads as a cut-out. A bloom on the
+            // lit side plus a falloff opposite it curves that face into a cap.
+            // Both poles are placed from style.lightAngle rather than from a
+            // constant, so the dome, the specular rim, and the drop shadow all
+            // agree about where the light is. Light the dome separately and the
+            // stack stops reading as one lit object.
+            if (tokens.domeStrength > 0f) {
+                val radians = style.lightAngle * DEGREES_TO_RADIANS
+                // +x is right and +y is DOWN in DrawScope, while lightAngle is
+                // measured counter-clockwise from +x in scene space; negating
+                // both puts the lit pole up-left at the default 45f.
+                val dx = -cos(radians)
+                val dy = -sin(radians)
+                val litCenter =
+                    Offset(
+                        size.width * (0.5f + dx * DOME_POLE_OFFSET),
+                        size.height * (0.5f + dy * DOME_POLE_OFFSET),
+                    )
+                val darkCenter =
+                    Offset(
+                        size.width * (0.5f - dx * DOME_POLE_OFFSET),
+                        size.height * (0.5f - dy * DOME_POLE_OFFSET),
+                    )
+                val domeRadius = size.maxDimension * DOME_RADIUS_SCALE
+                drawRect(
+                    Brush.radialGradient(
+                        0f to Color.White.copy(alpha = tokens.domeStrength),
+                        0.5f to Color.White.copy(alpha = tokens.domeStrength * 0.28f),
+                        1f to Color.Transparent,
+                        center = litCenter,
+                        radius = domeRadius,
+                    ),
+                )
+                drawRect(
+                    Brush.radialGradient(
+                        0f to Color.Black.copy(alpha = tokens.domeStrength * 0.55f),
+                        1f to Color.Transparent,
+                        center = darkCenter,
+                        radius = domeRadius,
+                    ),
+                )
+            }
+
+            // Frost. Drawn in the material's own tint, not in white: plain glass
+            // frosts white because the default tint is white, and a green-tinted
+            // surface frosts green without anyone passing a second colour.
+            if (tokens.frostAlpha > 0f && tokens.frostFraction > 0f && style.tint.isSpecified) {
+                val bandHeight = size.height * tokens.frostFraction
+                val bandTop = size.height - bandHeight
+                drawRect(
+                    brush =
+                        Brush.verticalGradient(
+                            0f to style.tint.copy(alpha = 0f),
+                            1f to style.tint.copy(alpha = tokens.frostAlpha),
+                            startY = bandTop,
+                            endY = size.height,
+                        ),
+                    topLeft = Offset(0f, bandTop),
+                    size = Size(size.width, bandHeight),
+                )
             }
         },
     )

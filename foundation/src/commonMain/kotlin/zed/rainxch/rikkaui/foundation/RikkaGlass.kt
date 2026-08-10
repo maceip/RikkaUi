@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 /**
  * A single depth level of the liquid glass material.
  *
- * A glass surface is built from five stacked contributions, all of which scale
+ * A glass surface is built from six stacked contributions, all of which scale
  * together as the surface moves "closer" to the viewer:
  *
  * 1. **Colour grade** — vibrancy, saturation, and brightness applied to the
@@ -21,7 +21,11 @@ import androidx.compose.ui.unit.dp
  * 3. **Refraction** — the lens distortion applied at the surface edge, which is
  *    what makes glass read as a physical slab rather than a translucent panel.
  * 4. **Tint** — the flat wash of colour laid over the refracted backdrop.
- * 5. **Highlight / shadow** — the specular rim, the inner shadow that gives the
+ * 5. **Modelling** — the dome gradient that curves the otherwise flat face, and
+ *    the frosted band along the bottom edge that closes the surface off. Both
+ *    are painted in the material's own tint and lit from its own angle, so they
+ *    read as shape rather than as decoration.
+ * 6. **Highlight / shadow** — the specular rim, the inner shadow that gives the
  *    slab thickness, and the drop shadow that seats it in space.
  *
  * @property blurRadius Backdrop blur radius. Requires Android 12 (API 31); on
@@ -51,6 +55,24 @@ import androidx.compose.ui.unit.dp
  *   This is what gives the slab thickness — without it glass reads as a decal.
  * @property innerShadowAlpha Opacity of the inner shadow.
  * @property shadowRadius Drop shadow radius cast by the glass slab.
+ * @property domeStrength Strength of the convex-lens shading painted over the
+ *   refracted backdrop: a specular bloom on the lit side and a matching falloff
+ *   opposite it. Refraction alone only bends the *edge*, so the middle of a
+ *   surface stays optically flat and the slab reads as a cut-out pane. This
+ *   gradient pair is what curves the face, turning the slab into a domed cap
+ *   that sits up off the content behind it. It is aimed by
+ *   [RikkaGlass.lightAngle], not by its own direction, so a dome, a rim, and a
+ *   drop shadow all agree about where the light is. `0f` disables it.
+ * @property frostFraction Share of the surface height, measured up from the
+ *   bottom edge, that carries the frosted wash. The bottom of a card is where
+ *   content thins out and the backdrop shows through hardest; frosting that band
+ *   gives text a floor to sit on and closes the surface off instead of letting
+ *   it fade into the scenery.
+ * @property frostAlpha Peak opacity of the frosted band at the very bottom edge,
+ *   fading to nothing at the top of the band. The wash is drawn in
+ *   [RikkaGlass.tint], so it frosts white on plain glass and green on green
+ *   glass — the frost belongs to the material, not to a fixed colour. `0f`
+ *   disables it.
  */
 @Immutable
 public data class RikkaGlassLevel(
@@ -69,6 +91,9 @@ public data class RikkaGlassLevel(
     val innerShadowRadius: Dp = 0.dp,
     val innerShadowAlpha: Float = 0f,
     val shadowRadius: Dp,
+    val domeStrength: Float = 0f,
+    val frostFraction: Float = 0.1f,
+    val frostAlpha: Float = 0f,
 )
 
 /**
@@ -167,9 +192,14 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 highlightAlpha = if (isDark) 0.30f else 0.45f,
                 highlightWidth = 0.5.dp,
                 highlightBlurRadius = 0.25.dp,
-                innerShadowRadius = 2.dp,
-                innerShadowAlpha = if (isDark) 0.18f else 0.10f,
-                shadowRadius = 0.dp,
+                innerShadowRadius = 3.dp,
+                innerShadowAlpha = if (isDark) 0.22f else 0.14f,
+                // Small, but not absent: a dial key with no drop shadow at all
+                // is painted onto the surface rather than resting on it.
+                shadowRadius = 6.dp,
+                domeStrength = if (isDark) 0.10f else 0.09f,
+                frostFraction = 0.1f,
+                frostAlpha = if (isDark) 0.14f else 0.17f,
             ),
         regular =
             RikkaGlassLevel(
@@ -184,9 +214,12 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 highlightAlpha = if (isDark) 0.45f else 0.60f,
                 highlightWidth = 0.75.dp,
                 highlightBlurRadius = 0.5.dp,
-                innerShadowRadius = 6.dp,
-                innerShadowAlpha = if (isDark) 0.22f else 0.12f,
-                shadowRadius = 16.dp,
+                innerShadowRadius = 9.dp,
+                innerShadowAlpha = if (isDark) 0.28f else 0.18f,
+                shadowRadius = 24.dp,
+                domeStrength = if (isDark) 0.13f else 0.11f,
+                frostFraction = 0.1f,
+                frostAlpha = if (isDark) 0.20f else 0.24f,
             ),
         prominent =
             RikkaGlassLevel(
@@ -201,9 +234,12 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 highlightAlpha = if (isDark) 0.55f else 0.72f,
                 highlightWidth = 1.dp,
                 highlightBlurRadius = 0.75.dp,
-                innerShadowRadius = 10.dp,
-                innerShadowAlpha = if (isDark) 0.26f else 0.14f,
-                shadowRadius = 32.dp,
+                innerShadowRadius = 14.dp,
+                innerShadowAlpha = if (isDark) 0.32f else 0.20f,
+                shadowRadius = 48.dp,
+                domeStrength = if (isDark) 0.16f else 0.14f,
+                frostFraction = 0.1f,
+                frostAlpha = if (isDark) 0.26f else 0.30f,
             ),
     )
 

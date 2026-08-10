@@ -178,12 +178,19 @@ public fun rememberGlassStyle(
         // Nested: subordinate to the slab it sits on. No drop shadow — a shadow
         // onto the very surface you are cut into reads as a seam. Dispersion
         // off, because fringing a fringe is mush.
+        //
+        // domeStrength survives at full strength: it is shading on the face, not
+        // a separation cue, and a nested button that flattens out is exactly the
+        // thing the domed look is meant to fix. frostAlpha is pulled back,
+        // because a card's frost band and a button's frost band land on top of
+        // each other near the bottom edge and stack into one muddy stripe.
         val nested =
             if (depth > 0) {
                 base.copy(
                     blurRadius = base.blurRadius * 0.5f,
                     dispersion = false,
                     shadowRadius = 0.dp,
+                    frostAlpha = base.frostAlpha * 0.6f,
                 )
             } else {
                 base
