@@ -1,0 +1,11 @@
+{
+  "name": "rikkaui-compose-gallery",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render-gallery.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
