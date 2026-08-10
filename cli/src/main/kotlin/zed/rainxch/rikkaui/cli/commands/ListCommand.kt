@@ -35,10 +35,11 @@ class ListCommand : CliktCommand(name = "list") {
         grouped.forEach { (category, items) ->
             echo("  $category:")
             items.forEach { item ->
+                val platform = if (item.platform == "android") " [Android]" else ""
                 val deps = if (item.registryDependencies.isNotEmpty()) {
                     " [deps: ${item.registryDependencies.joinToString(", ")}]"
                 } else ""
-                echo("    ${item.name.padEnd(20)} ${item.description}$deps")
+                echo("    ${item.name.padEnd(20)} ${item.description}$platform$deps")
             }
             echo("")
         }

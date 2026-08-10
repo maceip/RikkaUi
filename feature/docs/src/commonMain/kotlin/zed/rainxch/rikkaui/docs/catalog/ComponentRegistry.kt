@@ -79,6 +79,12 @@ import rikkaui.feature.docs.generated.resources.component_toggle_desc
 import rikkaui.feature.docs.generated.resources.component_toggle_group_desc
 import rikkaui.feature.docs.generated.resources.component_toggle_group_name
 import rikkaui.feature.docs.generated.resources.component_toggle_name
+import rikkaui.feature.docs.generated.resources.component_swipeable_row_desc
+import rikkaui.feature.docs.generated.resources.component_swipeable_row_name
+import rikkaui.feature.docs.generated.resources.component_glass_desc
+import rikkaui.feature.docs.generated.resources.component_glass_name
+import rikkaui.feature.docs.generated.resources.component_call_desc
+import rikkaui.feature.docs.generated.resources.component_call_name
 import rikkaui.feature.docs.generated.resources.component_tooltip_desc
 import rikkaui.feature.docs.generated.resources.component_tooltip_name
 import rikkaui.feature.docs.generated.resources.component_top_app_bar_desc
@@ -502,6 +508,34 @@ object ComponentRegistry {
                 descriptionRes = Res.string.component_toggle_group_desc,
                 category = ComponentCategory.Navigation,
                 content = { ToggleGroupDoc() },
+            ),
+            // ─── Android-only ────────────────────────
+            ComponentEntry(
+                id = "swipeable-row",
+                rawName = "Swipeable Row",
+                rawDescription = "Android row wrapper with edge actions and accessible alternatives.",
+                nameRes = Res.string.component_swipeable_row_name,
+                descriptionRes = Res.string.component_swipeable_row_desc,
+                category = ComponentCategory.Layout,
+                platform = ComponentPlatform.Android,
+            ),
+            ComponentEntry(
+                id = "glass",
+                rawName = "Liquid Glass",
+                rawDescription = "Android liquid-glass surfaces, controls, and capability-aware fallbacks.",
+                nameRes = Res.string.component_glass_name,
+                descriptionRes = Res.string.component_glass_desc,
+                category = ComponentCategory.Layout,
+                platform = ComponentPlatform.Android,
+            ),
+            ComponentEntry(
+                id = "call",
+                rawName = "Call Components",
+                rawDescription = "Android call UI including dialpad, history, transcript, sheet, and voice orb.",
+                nameRes = Res.string.component_call_name,
+                descriptionRes = Res.string.component_call_desc,
+                category = ComponentCategory.DataDisplay,
+                platform = ComponentPlatform.Android,
             ),
         )
 

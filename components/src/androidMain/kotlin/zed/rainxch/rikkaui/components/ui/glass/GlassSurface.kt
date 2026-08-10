@@ -182,6 +182,8 @@ public fun Modifier.glassSurface(
  * @param shape Surface outline; must be corner-based.
  * @param backdrop What shows through; taken from [LocalGlassBackdrop] by default.
  * @param tint Colour washed over the refracted backdrop.
+ * @param treatment Use [GlassTreatment.Smoked] for a colour-dense surface that
+ *   still samples and refracts its backdrop.
  * @param contentColor Colour provided to children through [LocalContentColor].
  * @param contentPadding Padding between the surface edge and its content.
  * @param contentAlignment Alignment of the content within the surface.
@@ -198,13 +200,14 @@ public fun GlassSurface(
     shape: CornerBasedShape = GlassDefaults.shape(),
     backdrop: Backdrop = LocalGlassBackdrop.current,
     tint: Color = RikkaTheme.glass.tint,
+    treatment: GlassTreatment = GlassTreatment.Clear,
     contentColor: Color = RikkaTheme.colors.onSurface,
     contentPadding: PaddingValues = GlassDefaults.contentPadding(),
     contentAlignment: Alignment = Alignment.TopStart,
     hostsGlass: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val style = rememberGlassStyle(level = level, tint = tint)
+    val style = rememberGlassStyle(level = level, tint = tint, treatment = treatment)
     val exported = if (hostsGlass) rememberGlassBackdrop() else null
 
     GlassContentScope(contentColor = contentColor, nestedBackdrop = exported ?: backdrop) {

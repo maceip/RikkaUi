@@ -17,6 +17,7 @@ data class RegistryIndexItem(
     val title: String,
     val description: String = "",
     val category: String = "",
+    val platform: String = "multiplatform",
     val registryDependencies: List<String> = emptyList(),
     val files: List<RegistryFileMeta>,
 )
@@ -35,6 +36,7 @@ data class RegistryComponent(
     val title: String,
     val description: String = "",
     val category: String = "",
+    val platform: String = "multiplatform",
     val version: String,
     val registryDependencies: List<String> = emptyList(),
     val gradleDependencies: List<String> = emptyList(),

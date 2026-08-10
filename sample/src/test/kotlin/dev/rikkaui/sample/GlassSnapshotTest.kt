@@ -10,19 +10,16 @@ import org.junit.Test
  *
  * ### What this can and cannot prove
  * Paparazzi renders through layoutlib on the JVM, which has no `RenderEffect`
- * and no `RuntimeShader`. The backdrop blur and the AGSL refraction shader
- * therefore do not run here, and these snapshots show the
- * `GlassCapability.None` fallback — the opaque themed surface. That is a real
- * shipping code path, and these tests are the only automated coverage it has.
+ * and no `RuntimeShader`. Backdrop sampling and translucent tint still render,
+ * so these are not `GlassCapability.None` fallback snapshots. Blur, AGSL lens
+ * refraction, dispersion, inner shadow, and the specular rim do not render.
  *
- * What is genuinely verified: layout and composition of all five scenes, the
- * radial-gradient dialpad keys, every Canvas layer of the orb except the glass
- * body, the swipe row at rest, and the ExtendedSpans decorations — those are
- * ordinary Skia path and rect drawing, so they render exactly as they will on a
- * device.
+ * What is genuinely verified: layout and composition of all five scenes,
+ * translucent backdrop sampling and tint, radial-gradient dialpad keys, Canvas
+ * layers of the orb, the swipe row at rest, and ExtendedSpans decorations.
  *
- * What is not: blur, refraction, dispersion, inner shadow, and the specular rim
- * — every part of the material that needs a shader. Those need a device.
+ * What is not: blur, refraction, dispersion, inner shadow, and the specular rim.
+ * Those remain physical-device acceptance criteria.
  */
 class GlassSnapshotTest {
     @get:Rule

@@ -146,6 +146,9 @@
     <string name="component_navigation_bar_name">Navigation Bar</string>
     <string name="component_top_app_bar_name">Top App Bar</string>
     <string name="component_toggle_group_name">Toggle Group</string>
+    <string name="component_swipeable_row_name">Swipeable Row</string>
+    <string name="component_glass_name">Liquid Glass</string>
+    <string name="component_call_name">Call Components</string>
 
     <!-- ─── Component Descriptions ───────────────────────────── -->
     <string name="component_card_desc">A container with border, shadow, and structured sections.</string>
@@ -188,6 +191,11 @@
     <string name="component_navigation_bar_desc">Bottom navigation with animated pill indicator.</string>
     <string name="component_top_app_bar_desc">Header bar with title and actions.</string>
     <string name="component_toggle_group_desc">Grouped toggle buttons.</string>
+    <string name="component_swipeable_row_desc">Android row wrapper with edge actions and accessible alternatives.</string>
+    <string name="component_glass_desc">Android liquid-glass surfaces, controls, and capability-aware fallbacks.</string>
+    <string name="component_call_desc">Android call UI including dialpad, history, transcript, sheet, and voice orb.</string>
+    <string name="component_android_only">Android only</string>
+    <string name="component_android_docs_note">This component is implemented in androidMain. Its source and install metadata are available here, while material and gesture rendering must be inspected in the Android sample or on a device.</string>
 
     <!-- ─── Introduction Page ────────────────────────────────── -->
     <string name="intro_title">Introduction</string>
@@ -214,7 +222,7 @@
     <string name="intro_platform_body">RikkaUI works in both Compose Multiplatform (KMP) projects and native Android projects that use Jetpack Compose. No KMP setup required for Android-only projects \u2014 just add the dependency and go.</string>
     <string name="intro_section_component_count">Component Count</string>
     <string name="intro_stat_total_components">Total Components</string>
-    <string name="intro_stat_total_components_value">42</string>
+    <string name="intro_stat_total_components_value">44</string>
     <string name="intro_stat_animation_enums">Animation Enums</string>
     <string name="intro_stat_animation_enums_value">20+</string>
     <string name="intro_stat_style_presets">Style Presets</string>

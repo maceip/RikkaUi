@@ -18,19 +18,19 @@ abstract class GenerateComponentSourcesTask : DefaultTask() {
     @get:InputDirectory
     abstract val componentsUiDir: DirectoryProperty
 
+    @get:InputDirectory
+    abstract val androidComponentsUiDir: DirectoryProperty
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
     @TaskAction
     fun generate() {
         val dirs =
-            componentsUiDir
-                .get()
-                .asFile
-                .listFiles()
-                ?.filter { it.isDirectory }
-                ?.sortedBy { it.name }
-                ?: emptyList()
+            listOf(componentsUiDir.get().asFile, androidComponentsUiDir.get().asFile)
+                .flatMap { root -> root.listFiles()?.filter { it.isDirectory } ?: emptyList() }
+                .groupBy { it.name }
+                .toSortedMap()
 
         val sb = StringBuilder()
         sb.appendLine("package zed.rainxch.rikkaui.docs.sources")
@@ -47,15 +47,13 @@ abstract class GenerateComponentSourcesTask : DefaultTask() {
         sb.appendLine()
         sb.appendLine("    val sources: Map<String, List<SourceFile>> = mapOf(")
 
-        dirs.forEach { dir ->
+        dirs.forEach { (dirName, sourceDirs) ->
             val ktFiles =
-                dir
-                    .listFiles()
-                    ?.filter { it.extension == "kt" }
-                    ?.sortedBy { it.name }
-                    ?: emptyList()
+                sourceDirs
+                    .flatMap { dir -> dir.listFiles()?.filter { it.extension == "kt" } ?: emptyList() }
+                    .sortedBy { it.name }
             if (ktFiles.isNotEmpty()) {
-                sb.appendLine("        \"${dir.name}\" to listOf(")
+                sb.appendLine("        \"$dirName\" to listOf(")
                 ktFiles.forEach { file ->
                     val encoded =
                         Base64
@@ -83,6 +81,11 @@ val generateComponentSources by tasks.registering(GenerateComponentSourcesTask::
     componentsUiDir.set(
         layout.projectDirectory.dir(
             "../../components/src/commonMain/kotlin/zed/rainxch/rikkaui/components/ui",
+        ),
+    )
+    androidComponentsUiDir.set(
+        layout.projectDirectory.dir(
+            "../../components/src/androidMain/kotlin/zed/rainxch/rikkaui/components/ui",
         ),
     )
     outputDir.set(

@@ -25,6 +25,13 @@ import org.jetbrains.compose.resources.stringResource
 import rikkaui.feature.docs.generated.resources.Res
 import rikkaui.feature.docs.generated.resources.source_tab_code
 import rikkaui.feature.docs.generated.resources.source_tab_docs
+import rikkaui.feature.docs.generated.resources.component_android_docs_note
+import rikkaui.feature.docs.generated.resources.component_android_only
+import zed.rainxch.rikkaui.components.ui.badge.Badge
+import zed.rainxch.rikkaui.components.ui.badge.BadgeVariant
+import zed.rainxch.rikkaui.components.ui.text.Text
+import zed.rainxch.rikkaui.components.ui.text.TextVariant
+import zed.rainxch.rikkaui.docs.catalog.ComponentPlatform
 import zed.rainxch.rikkaui.docs.catalog.ComponentRegistry
 import zed.rainxch.rikkaui.docs.catalog.guidePages
 import zed.rainxch.rikkaui.docs.sources.SourceCodeViewer
@@ -73,7 +80,21 @@ fun PageContent(
             if (showCode) {
                 SourceCodeViewer(componentId = entry.id)
             } else {
-                entry.content()
+                if (entry.platform == ComponentPlatform.Android) {
+                    Column(verticalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.md)) {
+                        Text(text = stringResource(entry.nameRes), variant = TextVariant.H1)
+                        Badge(
+                            text = stringResource(Res.string.component_android_only),
+                            variant = BadgeVariant.Secondary,
+                        )
+                        Text(
+                            text = stringResource(Res.string.component_android_docs_note),
+                            variant = TextVariant.Muted,
+                        )
+                    }
+                } else {
+                    entry.content?.invoke()
+                }
             }
         }
     }

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package zed.rainxch.rikkaui.components.ui.call
 
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +38,8 @@ import zed.rainxch.rikkaui.components.ui.glass.LocalGlassBackdrop
 import zed.rainxch.rikkaui.components.ui.icon.Icon
 import zed.rainxch.rikkaui.components.ui.icon.IconSize
 import zed.rainxch.rikkaui.components.ui.icon.RikkaIcons
+import zed.rainxch.rikkaui.components.ui.swipeable.SwipeableRow
+import zed.rainxch.rikkaui.components.ui.swipeable.rememberSwipeableRowAction
 import zed.rainxch.rikkaui.components.ui.text.Text
 import zed.rainxch.rikkaui.components.ui.text.TextVariant
 import zed.rainxch.rikkaui.foundation.RikkaTheme
@@ -57,6 +61,7 @@ import zed.rainxch.rikkaui.foundation.RikkaTheme
  *   rather than off-screen.
  */
 @Immutable
+@Deprecated("Use SwipeableRowAction from components.ui.swipeable")
 public data class GlassSwipeAction(
     val onSwipe: () -> Unit,
     val background: Color,
@@ -66,6 +71,7 @@ public data class GlassSwipeAction(
     val isUndo: Boolean = false,
 )
 
+@Deprecated("Use SwipeableRowDefaults from components.ui.swipeable")
 public object GlassSwipeDefaults {
     /** How far the row must travel before releasing commits the action. */
     public val SwipeThreshold: Dp = 56.dp
@@ -105,6 +111,7 @@ public object GlassSwipeDefaults {
  * @param content The row content, typically a [GlassCard].
  */
 @Composable
+@Deprecated("Use SwipeableRow from components.ui.swipeable")
 public fun GlassSwipeableRow(
     modifier: Modifier = Modifier,
     startActions: List<GlassSwipeAction> = emptyList(),
@@ -151,6 +158,7 @@ private fun GlassSwipeAction.toSwipeAction(): SwipeAction =
 
 /** Builds a [GlassSwipeAction] from a RikkaUI icon, sized and tinted for the panel. */
 @Composable
+@Deprecated("Use rememberSwipeableRowAction from components.ui.swipeable")
 public fun rememberGlassSwipeAction(
     icon: IconToken,
     background: Color,
@@ -238,7 +246,7 @@ public fun CallHistoryItem(
 
     val deleteAction =
         onDelete?.let {
-            rememberGlassSwipeAction(
+            rememberSwipeableRowAction(
                 icon = RikkaIcons.Trash,
                 background = colors.destructive,
                 contentColor = colors.onDestructive,
@@ -248,7 +256,7 @@ public fun CallHistoryItem(
         }
     val callBackAction =
         onCallBack?.let {
-            rememberGlassSwipeAction(
+            rememberSwipeableRowAction(
                 icon = RikkaIcons.Phone,
                 background = colors.success,
                 contentColor = colors.onSuccess,
@@ -257,7 +265,7 @@ public fun CallHistoryItem(
             )
         }
 
-    GlassSwipeableRow(
+    SwipeableRow(
         modifier = modifier,
         startActions = listOfNotNull(deleteAction),
         endActions = listOfNotNull(callBackAction),

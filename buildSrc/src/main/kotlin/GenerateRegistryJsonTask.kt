@@ -13,6 +13,9 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
     @get:InputDirectory
     abstract val componentsUiDir: DirectoryProperty
 
+    @get:InputDirectory
+    abstract val androidComponentsUiDir: DirectoryProperty
+
     @get:InputFile
     abstract val registrySourceFile: RegularFileProperty
 
@@ -39,6 +42,7 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
         "context-menu" to "contextmenu",
         "navigation-bar" to "navigationbar",
         "top-app-bar" to "topappbar",
+        "swipeable-row" to "swipeable",
     )
 
     // Reverse: dir name → registry ID
@@ -58,6 +62,25 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t")
+
+    private fun externalDependencies(
+        dirName: String,
+        version: String,
+    ): List<String> =
+        buildList {
+            add("dev.rikkaui:foundation:$version")
+            if (dirName == "icon") {
+                add("dev.rikkaui.icons:core:0.1.0")
+                add("dev.rikkaui.icons:tokens-core:0.1.0")
+                add("dev.rikkaui.icons:pack-phosphor:0.1.0")
+            }
+            if (dirName == "glass") add("io.github.kyant0:backdrop:1.0.0")
+            if (dirName == "swipeable" || dirName == "call") add("me.saket.swipe:swipe:1.2.0")
+            if (dirName == "call") {
+                add("io.github.kyant0:backdrop:1.0.0")
+                add("me.saket.extendedspans:extendedspans:1.4.0")
+            }
+        }.distinct()
 
     private fun parseRegistry(): List<ComponentMeta> {
         val source = registrySourceFile.get().asFile.readText()
@@ -113,19 +136,16 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
 
         val registry = parseRegistry()
         val uiDir = componentsUiDir.get().asFile
-
-        // Build set of all known dir names (registered + unregistered)
-        val allDirs = uiDir.listFiles()
-            ?.filter { it.isDirectory }
-            ?.map { it.name }
-            ?.toSet()
-            ?: emptySet()
+        val androidUiDir = androidComponentsUiDir.get().asFile
 
         val indexEntries = mutableListOf<String>()
 
         registry.forEach { meta ->
             val dirName = idToDirName(meta.id)
-            val dir = uiDir.resolve(dirName)
+            val commonDir = uiDir.resolve(dirName)
+            val androidDir = androidUiDir.resolve(dirName)
+            val dir = if (commonDir.isDirectory) commonDir else androidDir
+            val platform = if (dir == androidDir) "android" else "multiplatform"
             if (!dir.isDirectory) {
                 logger.warn("Registry entry '${meta.id}' has no matching directory: $dirName")
                 return@forEach
@@ -154,6 +174,9 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
             val depsJson = if (depIds.isNotEmpty()) {
                 depIds.joinToString(",\n") { """    "$it"""" }
             } else ""
+            val gradleDepsJson =
+                externalDependencies(dirName, version)
+                    .joinToString(",\n") { "    \"$it\"" }
 
             val componentJson = """{
   "name": "${meta.id}",
@@ -161,12 +184,13 @@ abstract class GenerateRegistryJsonTask : DefaultTask() {
   "title": "${meta.rawName}",
   "description": "${escapeJson(meta.rawDescription)}",
   "category": "${meta.category}",
+  "platform": "$platform",
   "version": "$version",
   "registryDependencies": [
 $depsJson
   ],
   "gradleDependencies": [
-    "dev.rikkaui:foundation:$version"
+$gradleDepsJson
   ],
   "files": [
 $filesJson
@@ -188,6 +212,7 @@ $filesJson
     "title": "${meta.rawName}",
     "description": "${escapeJson(meta.rawDescription)}",
     "category": "${meta.category}",
+    "platform": "$platform",
     "registryDependencies": [${depIds.joinToString(", ") { "\"$it\"" }}],
     "files": [
 $filesMetaJson
@@ -228,6 +253,9 @@ $filesMetaJson
             val depsJson = if (depIds.isNotEmpty()) {
                 depIds.joinToString(",\n") { """    "$it"""" }
             } else ""
+            val gradleDepsJson =
+                externalDependencies(dir.name, version)
+                    .joinToString(",\n") { "    \"$it\"" }
 
             val componentJson = """{
   "name": "$id",
@@ -238,7 +266,7 @@ $filesMetaJson
 $depsJson
   ],
   "gradleDependencies": [
-    "dev.rikkaui:foundation:$version"
+$gradleDepsJson
   ],
   "files": [
 $filesJson

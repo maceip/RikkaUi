@@ -31,6 +31,7 @@ import zed.rainxch.rikkaui.components.ui.glass.GlassChip
 import zed.rainxch.rikkaui.components.ui.glass.GlassLevel
 import zed.rainxch.rikkaui.components.ui.glass.GlassPanel
 import zed.rainxch.rikkaui.components.ui.glass.GlassSurface
+import zed.rainxch.rikkaui.components.ui.glass.GlassTreatment
 import zed.rainxch.rikkaui.components.ui.glass.LocalGlassBackdrop
 import zed.rainxch.rikkaui.components.ui.icon.Icon
 import zed.rainxch.rikkaui.components.ui.icon.RikkaIcons
@@ -81,8 +82,9 @@ public object IncomingCallSheetDefaults {
  * rather than the screen behind it — so the controls read as cut from the same
  * slab instead of floating in front of it.
  *
- * Answer and decline are tinted `success` and `destructive` rather than being
- * shape- or position-coded alone, and each takes an explicit label, because
+ * Answer and decline use colour-dense smoked glass in `success` and
+ * `destructive`: the backdrop still samples through them, but cannot overwhelm
+ * their meaning. Each also takes an explicit label, because
  * "the green one" is not an instruction a screen reader can follow.
  *
  * ```
@@ -180,6 +182,7 @@ public fun IncomingCallSheet(
                         modifier = Modifier.weight(1f),
                         level = GlassLevel.Regular,
                         tint = colors.destructive,
+                        treatment = GlassTreatment.Smoked,
                         contentColor = colors.onDestructive,
                         label = declineLabel,
                     ) {
@@ -191,6 +194,7 @@ public fun IncomingCallSheet(
                         modifier = Modifier.weight(1f),
                         level = GlassLevel.Regular,
                         tint = colors.success,
+                        treatment = GlassTreatment.Smoked,
                         contentColor = colors.onSuccess,
                         label = answerLabel,
                     ) {

@@ -21,6 +21,11 @@ enum class ComponentCategory(
     Navigation(Res.string.category_navigation),
 }
 
+enum class ComponentPlatform {
+    Multiplatform,
+    Android,
+}
+
 data class ComponentEntry(
     val id: String,
     val rawName: String,
@@ -28,5 +33,6 @@ data class ComponentEntry(
     val nameRes: StringResource,
     val descriptionRes: StringResource,
     val category: ComponentCategory,
-    val content: @Composable () -> Unit,
+    val platform: ComponentPlatform = ComponentPlatform.Multiplatform,
+    val content: (@Composable () -> Unit)? = null,
 )

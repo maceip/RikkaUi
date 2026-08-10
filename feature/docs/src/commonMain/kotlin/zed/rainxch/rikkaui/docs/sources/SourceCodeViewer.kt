@@ -48,6 +48,7 @@ import zed.rainxch.rikkaui.foundation.RikkaVersion
 private fun resolveSourceDir(componentId: String): String =
     when (componentId) {
         "dropdown-menu" -> "dropdown"
+        "swipeable-row" -> "swipeable"
         else -> componentId.replace("-", "")
     }
 

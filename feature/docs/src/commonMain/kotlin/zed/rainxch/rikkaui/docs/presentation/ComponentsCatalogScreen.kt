@@ -48,6 +48,7 @@ import zed.rainxch.rikkaui.components.ui.text.Text
 import zed.rainxch.rikkaui.components.ui.text.TextVariant
 import zed.rainxch.rikkaui.docs.catalog.ComponentCategory
 import zed.rainxch.rikkaui.docs.catalog.ComponentEntry
+import zed.rainxch.rikkaui.docs.catalog.ComponentPlatform
 import zed.rainxch.rikkaui.docs.catalog.ComponentRegistry
 import zed.rainxch.rikkaui.foundation.RikkaTheme
 
@@ -260,7 +261,12 @@ private fun ComponentCard(
         Spacer(Modifier.height(RikkaTheme.spacing.md))
 
         Badge(
-            text = stringResource(entry.category.labelRes),
+            text =
+                if (entry.platform == ComponentPlatform.Android) {
+                    "${stringResource(entry.category.labelRes)} · Android"
+                } else {
+                    stringResource(entry.category.labelRes)
+                },
             variant = BadgeVariant.Secondary,
         )
     }

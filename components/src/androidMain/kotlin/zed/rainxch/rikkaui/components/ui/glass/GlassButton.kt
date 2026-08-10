@@ -70,6 +70,8 @@ public object GlassButtonDefaults {
  * @param backdrop What shows through; taken from [LocalGlassBackdrop] by default.
  * @param tint Colour washed over the refracted backdrop. Pass an accent here for
  *   a primary action — it tints the glass without making it opaque.
+ * @param treatment Use [GlassTreatment.Smoked] with a semantic [tint] when the
+ *   hue must survive arbitrary backdrop colours without replacing the glass.
  * @param contentColor Colour provided to children through [LocalContentColor].
  * @param contentPadding Padding between the surface edge and its content.
  * @param label Accessibility content description; use it when the content is icon-only.
@@ -84,12 +86,13 @@ public fun GlassButton(
     shape: CornerBasedShape = GlassButtonDefaults.shape(),
     backdrop: Backdrop = LocalGlassBackdrop.current,
     tint: Color = RikkaTheme.glass.tint,
+    treatment: GlassTreatment = GlassTreatment.Clear,
     contentColor: Color = RikkaTheme.colors.onSurface,
     contentPadding: PaddingValues = GlassButtonDefaults.contentPadding(),
     label: String = "",
     content: @Composable RowScope.() -> Unit,
 ) {
-    val style = rememberGlassStyle(level = level, tint = tint)
+    val style = rememberGlassStyle(level = level, tint = tint, treatment = treatment)
 
     val interactionSource = remember { MutableInteractionSource() }
     val press = rememberGlassPressState(interactionSource, enabled = enabled)

@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -44,6 +45,21 @@ public enum class GlassLevel {
     /** Promotes this level [steps] rungs, topping out at [Prominent]. */
     internal fun stepUp(steps: Int = 1): GlassLevel = entries[(ordinal + steps).coerceAtMost(entries.lastIndex)]
 }
+
+/**
+ * How strongly a glass surface should inherit colour from its tint.
+ *
+ * [Clear] is the ordinary crystalline material. [Smoked] remains translucent
+ * and keeps the same blur, refraction, rim, and press response, but quiets the
+ * backdrop and lays in enough colour for a semantic action to stay recognizable
+ * over arbitrary scenery.
+ */
+public enum class GlassTreatment {
+    Clear,
+    Smoked,
+}
+
+private const val SMOKED_TINT_ALPHA: Float = 0.76f
 
 // ─── Nesting ────────────────────────────────────────────────
 
@@ -134,6 +150,8 @@ public data class GlassStyle(
  *
  * @param level Requested depth, before nesting is taken into account.
  * @param tint Colour washed over the backdrop; the theme's glass tint by default.
+ * @param treatment Whether this is ordinary clear glass or colour-dense smoked
+ *   glass intended for semantic and high-emphasis controls.
  * @param capability Device tier; taken from [LocalGlassCapability] by default.
  * @param depth Nesting depth; taken from [LocalGlassDepth] by default.
  */
@@ -141,6 +159,7 @@ public data class GlassStyle(
 public fun rememberGlassStyle(
     level: GlassLevel = GlassLevel.Regular,
     tint: Color = RikkaTheme.glass.tint,
+    treatment: GlassTreatment = GlassTreatment.Clear,
     capability: GlassCapability = LocalGlassCapability.current,
     depth: Int = LocalGlassDepth.current,
 ): GlassStyle {
@@ -148,7 +167,7 @@ public fun rememberGlassStyle(
     val colors = RikkaTheme.colors
     val elevation = RikkaTheme.elevation
 
-    return remember(glass, colors, elevation, level, tint, capability, depth) {
+    return remember(glass, colors, elevation, level, tint, treatment, capability, depth) {
         val base =
             when (level.stepDown(depth)) {
                 GlassLevel.Subtle -> glass.subtle
@@ -172,7 +191,7 @@ public fun rememberGlassStyle(
 
         // No refracting edge to define the boundary, so lean harder on the tint
         // and the rim to keep the surface readable as a shape.
-        val tokens =
+        val capabilityAdjusted =
             if (capability == GlassCapability.Blur) {
                 nested.copy(
                     tintAlpha = (nested.tintAlpha * 1.3f).coerceAtMost(0.6f),
@@ -180,6 +199,22 @@ public fun rememberGlassStyle(
                 )
             } else {
                 nested
+            }
+
+        // Smoked glass is colour-dense, not opaque. Reducing the backdrop's
+        // saturation stops a warm or green scene from shifting the semantic
+        // hue, while the tint floor leaves plenty of scenery visible through
+        // the material. All geometric/light effects remain unchanged.
+        val tokens =
+            if (treatment == GlassTreatment.Smoked) {
+                capabilityAdjusted.copy(
+                    tintAlpha = capabilityAdjusted.tintAlpha.coerceAtLeast(SMOKED_TINT_ALPHA),
+                    saturation = capabilityAdjusted.saturation.coerceAtMost(0.72f),
+                    brightness = capabilityAdjusted.brightness.coerceAtMost(-0.08f),
+                    highlightAlpha = capabilityAdjusted.highlightAlpha.coerceAtLeast(0.5f),
+                )
+            } else {
+                capabilityAdjusted
             }
 
         GlassStyle(
@@ -194,7 +229,12 @@ public fun rememberGlassStyle(
             pressHighlight = glass.pressHighlight,
             pressLightShift = glass.pressLightShift,
             capability = capability,
-            fallbackColor = colors.surface,
+            fallbackColor =
+                if (treatment == GlassTreatment.Smoked && tint.isSpecified) {
+                    tint
+                } else {
+                    colors.surface
+                },
             fallbackBorderColor = colors.border,
             fallbackElevation = if (tokens.shadowRadius > 0.dp) elevation.medium else elevation.none,
         )
