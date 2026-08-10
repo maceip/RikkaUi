@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
@@ -40,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.components.ui.icon.Icon
 import zed.rainxch.rikkaui.components.ui.text.Text
 import zed.rainxch.rikkaui.components.ui.text.TextVariant
@@ -294,17 +294,17 @@ public fun RowScope.NavigationBarItem(
 // ─── NavigationBarItem (convenience overload) ─────────────────
 
 /**
- * Convenience navigation bar item that accepts [ImageVector] and [String] directly.
+ * Convenience navigation bar item that accepts [IconToken] and [String] directly.
  *
  * Automatically animates icon and label colors between active/inactive states.
  * Delegates to the content-lambda overload of [NavigationBarItem].
  *
  * @param selected Whether this item is currently selected.
  * @param onClick Callback invoked when the item is clicked.
- * @param icon [ImageVector] icon displayed in the default (unselected) state.
+ * @param icon [IconToken] displayed in the default (unselected) state.
  * @param label String label displayed below the icon.
  * @param modifier [Modifier] applied to the item container.
- * @param selectedIcon Optional [ImageVector] icon displayed when selected. Falls back to [icon] if null.
+ * @param selectedIcon Optional [IconToken] displayed when selected. Falls back to [icon] if null.
  * @param enabled Whether the item is interactive. Defaults to true.
  * @param alwaysShowLabel Whether to always show the label or only when selected. Defaults to true.
  * @param animation [NavigationBarAnimation] style for state transitions. Defaults to [NavigationBarAnimation.Spring].
@@ -316,10 +316,10 @@ public fun RowScope.NavigationBarItem(
 public fun RowScope.NavigationBarItem(
     selected: Boolean,
     onClick: () -> Unit,
-    icon: ImageVector,
+    icon: IconToken,
     label: String,
     modifier: Modifier = Modifier,
-    selectedIcon: ImageVector? = null,
+    selectedIcon: IconToken? = null,
     enabled: Boolean = true,
     alwaysShowLabel: Boolean = true,
     animation: NavigationBarAnimation = NavigationBarAnimation.Spring,

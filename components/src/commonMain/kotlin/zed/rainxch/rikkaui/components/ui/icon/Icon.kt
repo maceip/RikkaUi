@@ -5,20 +5,19 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import zed.rainxch.rikkaicons.core.AppIcon
+import zed.rainxch.rikkaicons.core.DecorativeAppIcon
+import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.foundation.LocalContentColor
 import zed.rainxch.rikkaui.foundation.RikkaTheme
 
@@ -38,7 +37,7 @@ public enum class IconSize(
 // ─── Component ──────────────────────────────────────────────
 
 /**
- * Foundation-only icon composable that renders an [ImageVector] with a color tint.
+ * Foundation-only icon composable that resolves a semantic [IconToken].
  *
  * Tint resolution order: explicit [tint] > [LocalContentColor] > theme onBackground.
  * Pass `null` for [contentDescription] to mark the icon as decorative (clears semantics).
@@ -54,7 +53,7 @@ public enum class IconSize(
  * )
  * ```
  *
- * @param imageVector The [ImageVector] to render (e.g. from [RikkaIcons]).
+ * @param imageVector The semantic [IconToken] to render (e.g. from [RikkaIcons]).
  * @param contentDescription Accessibility label; null marks the icon as purely decorative.
  * @param modifier [Modifier] applied to the icon container.
  * @param tint Color applied as a tint filter; [Color.Unspecified] defers to [LocalContentColor].
@@ -63,7 +62,7 @@ public enum class IconSize(
  */
 @Composable
 public fun Icon(
-    imageVector: ImageVector,
+    imageVector: IconToken,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
@@ -76,8 +75,6 @@ public fun Icon(
             LocalContentColor.current != Color.Unspecified -> LocalContentColor.current
             else -> RikkaTheme.colors.onBackground
         }
-    val painter = rememberVectorPainter(imageVector)
-
     val semanticsModifier =
         if (contentDescription == null) {
             modifier.clearAndSetSemantics {}
@@ -89,10 +86,7 @@ public fun Icon(
         if (size != null) {
             Modifier.size(size.dp)
         } else {
-            Modifier.size(
-                imageVector.defaultWidth,
-                imageVector.defaultHeight,
-            )
+            Modifier.size(IconSize.Default.dp)
         }
 
     val spinModifier =
@@ -122,10 +116,19 @@ public fun Icon(
                 .then(sizeModifier)
                 .then(spinModifier),
     ) {
-        Image(
-            painter = painter,
-            contentDescription = contentDescription,
-            colorFilter = ColorFilter.tint(resolvedTint),
-        )
+        if (contentDescription == null) {
+            DecorativeAppIcon(
+                token = imageVector,
+                tint = resolvedTint,
+                size = size?.dp ?: IconSize.Default.dp,
+            )
+        } else {
+            AppIcon(
+                token = imageVector,
+                contentDescription = contentDescription,
+                tint = resolvedTint,
+                size = size?.dp ?: IconSize.Default.dp,
+            )
+        }
     }
 }

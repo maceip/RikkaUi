@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import zed.rainxch.rikkaui.components.ui.avatar.Avatar
+import zed.rainxch.rikkaui.components.ui.avatar.AvatarAnimation
 import zed.rainxch.rikkaui.components.ui.avatar.AvatarSize
 import zed.rainxch.rikkaui.components.ui.glass.GlassButton
 import zed.rainxch.rikkaui.components.ui.glass.GlassChip
@@ -214,7 +215,12 @@ private fun CallerHeader(
         horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Avatar(fallback = callerName, size = AvatarSize.Lg)
+        Avatar(
+            fallback = initialsOf(callerName),
+            size = AvatarSize.Lg,
+            animation = AvatarAnimation.None,
+            label = callerName,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.xs)) {
             Text(text = callerName, variant = TextVariant.H3)
             if (callerDetail.isNotEmpty()) {

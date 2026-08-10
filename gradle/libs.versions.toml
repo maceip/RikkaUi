@@ -3,9 +3,9 @@ agp = "8.10.0"
 androidx-lifecycle = "2.9.6"
 composeMultiplatform = "1.10.0"
 junit = "4.13.2"
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 material3 = "1.10.0-alpha05"
-kotlinStdlib = "2.3.0"
+kotlinStdlib = "2.3.20"
 runner = "1.5.2"
 core = "1.5.0"
 junitVersion = "1.1.5"
@@ -25,6 +25,10 @@ swipe = "1.2.0"
 # Rounded-background and squiggly-underline span painters for AnnotatedString.
 # Android only (aar). Depends on compose.ui + compose.foundation, no Material.
 extendedspans = "1.4.0"
+rikka-icons = "0.1.0"
+# Sample app + screenshot verification (JVM/layoutlib, no emulator).
+androidxActivity = "1.9.3"
+paparazzi = "2.0.0-alpha05"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,12 +52,20 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
 swipe = { module = "me.saket.swipe:swipe", version.ref = "swipe" }
 extendedspans = { module = "me.saket.extendedspans:extendedspans", version.ref = "extendedspans" }
+rikka-icons-core = { module = "dev.rikkaui.icons:core", version.ref = "rikka-icons" }
+rikka-icons-tokens-core = { module = "dev.rikkaui.icons:tokens-core", version.ref = "rikka-icons" }
+rikka-icons-pack-phosphor = { module = "dev.rikkaui.icons:pack-phosphor", version.ref = "rikka-icons" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+paparazzi = { id = "app.cash.paparazzi", version.ref = "paparazzi" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 gradle-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 vanniktechMavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }

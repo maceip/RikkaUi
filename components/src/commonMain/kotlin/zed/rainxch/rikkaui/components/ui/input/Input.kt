@@ -34,11 +34,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -49,6 +46,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import zed.rainxch.rikkaicons.core.IconToken
+import zed.rainxch.rikkaui.components.ui.icon.Icon
+import zed.rainxch.rikkaui.components.ui.icon.IconSize
+import zed.rainxch.rikkaui.components.ui.icon.RikkaIcons
 import zed.rainxch.rikkaui.foundation.RikkaTheme
 import zed.rainxch.rikkaui.foundation.modifier.minTouchTarget
 
@@ -163,8 +164,8 @@ public data class InputColorValues(
  * @param errorMessage Error text announced to assistive technologies when [isError] is true.
  * @param style Additional [TextStyle] merged with the theme typography.
  * @param animation Focus animation style — [InputAnimation.Glow], Color, None.
- * @param leadingIcon Optional [ImageVector] rendered before the text.
- * @param trailingIcon Optional [ImageVector] rendered after the text.
+ * @param leadingIcon Optional semantic [IconToken] rendered before the text.
+ * @param trailingIcon Optional semantic [IconToken] rendered after the text.
  * @param clearable When true, shows a clear button when the field is non-empty.
  * @param onClear Optional callback invoked when the clear button is tapped; defaults to clearing [value].
  * @param maxLength Maximum number of characters allowed; null for unlimited.
@@ -188,8 +189,8 @@ public fun Input(
     errorMessage: String = "",
     style: TextStyle = TextStyle.Default,
     animation: InputAnimation = InputAnimation.Glow,
-    leadingIcon: ImageVector? = null,
-    trailingIcon: ImageVector? = null,
+    leadingIcon: IconToken? = null,
+    trailingIcon: IconToken? = null,
     clearable: Boolean = false,
     onClear: (() -> Unit)? = null,
     maxLength: Int? = null,
@@ -410,15 +411,11 @@ public fun Input(
                 ) {
                     // ─── Leading icon ─────────────────
                     if (leadingIcon != null) {
-                        val painter = rememberVectorPainter(leadingIcon)
-                        androidx.compose.foundation.Image(
-                            painter = painter,
+                        Icon(
+                            imageVector = leadingIcon,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            colorFilter =
-                                ColorFilter.tint(
-                                    colors.placeholder,
-                                ),
+                            size = IconSize.Sm,
+                            tint = colors.placeholder,
                         )
                         Spacer(Modifier.width(spacing.sm))
                     }
@@ -484,18 +481,11 @@ public fun Input(
                         }
                     } else if (trailingIcon != null) {
                         Spacer(Modifier.width(spacing.sm))
-                        val painter =
-                            rememberVectorPainter(
-                                trailingIcon,
-                            )
-                        androidx.compose.foundation.Image(
-                            painter = painter,
+                        Icon(
+                            imageVector = trailingIcon,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            colorFilter =
-                                ColorFilter.tint(
-                                    colors.placeholder,
-                                ),
+                            size = IconSize.Sm,
+                            tint = colors.placeholder,
                         )
                     }
                 }
@@ -504,40 +494,12 @@ public fun Input(
     )
 }
 
-// ─── Clear icon (inline X — avoids RikkaIcons dependency cycle) ─
-
-// Inline X icon to avoid circular dependency on RikkaIcons
 @Composable
 private fun ClearIcon(tint: Color) {
-    val vector =
-        remember {
-            androidx.compose.ui.graphics.vector.ImageVector
-                .Builder(
-                    name = "ClearX",
-                    defaultWidth = 16.dp,
-                    defaultHeight = 16.dp,
-                    viewportWidth = 24f,
-                    viewportHeight = 24f,
-                ).apply {
-                    addPath(
-                        pathData =
-                            androidx.compose.ui.graphics.vector.PathData {
-                                moveTo(18f, 6f)
-                                lineTo(6f, 18f)
-                                moveTo(6f, 6f)
-                                lineTo(18f, 18f)
-                            },
-                        stroke = SolidColor(Color.Black),
-                        strokeLineWidth = 2f,
-                        strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                    )
-                }.build()
-        }
-    val painter = rememberVectorPainter(vector)
-    androidx.compose.foundation.Image(
-        painter = painter,
+    Icon(
+        imageVector = RikkaIcons.X,
         contentDescription = "Clear input",
-        modifier = Modifier.size(16.dp),
-        colorFilter = ColorFilter.tint(tint),
+        size = IconSize.Sm,
+        tint = tint,
     )
 }

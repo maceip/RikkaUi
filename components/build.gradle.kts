@@ -52,6 +52,11 @@ kotlin {
                 implementation(projects.foundation)
                 implementation(libs.compose.ui)
                 implementation(libs.compose.components.resources)
+                // RikkaUI owns the semantic icon contract. Consumers choose
+                // the supported Phosphor weight at their composition root.
+                api(libs.rikka.icons.core)
+                api(libs.rikka.icons.tokens.core)
+                api(libs.rikka.icons.pack.phosphor)
             }
         }
 

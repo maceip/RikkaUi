@@ -2,7 +2,7 @@ package zed.rainxch.rikkaui.components.ui.button
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.components.ui.icon.Icon
 import zed.rainxch.rikkaui.components.ui.icon.IconSize
 
@@ -36,7 +36,7 @@ public enum class IconButtonSize {
  * )
  * ```
  *
- * @param icon The [ImageVector] to display inside the button.
+ * @param icon The semantic [IconToken] to display inside the button.
  * @param contentDescription Accessibility label read by screen readers.
  * @param onClick Called when the icon button is clicked.
  * @param modifier Modifier applied to the button container.
@@ -48,7 +48,7 @@ public enum class IconButtonSize {
  */
 @Composable
 public fun IconButton(
-    icon: ImageVector,
+    icon: IconToken,
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.components.ui.icon.Icon
 import zed.rainxch.rikkaui.components.ui.icon.RikkaIcons
 import zed.rainxch.rikkaui.components.ui.text.Text
@@ -78,7 +78,7 @@ public enum class AccordionAnimation {
  * @param onExpandedChange Callback invoked with the new expanded state when the title is clicked.
  * @param modifier [Modifier] applied to the root column.
  * @param animation [AccordionAnimation] controlling expand/collapse transitions. Defaults to [AccordionAnimation.Spring].
- * @param chevronIcon [ImageVector] used as the expansion indicator. Defaults to [RikkaIcons.ChevronRight].
+ * @param chevronIcon [IconToken] used as the expansion indicator. Defaults to [RikkaIcons.ChevronRight].
  * @param content Composable content displayed when expanded.
  */
 @Composable
@@ -88,7 +88,7 @@ public fun AccordionItem(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     animation: AccordionAnimation = AccordionAnimation.Spring,
-    chevronIcon: ImageVector = RikkaIcons.ChevronRight,
+    chevronIcon: IconToken = RikkaIcons.ChevronRight,
     content: @Composable () -> Unit,
 ) {
     val colors = RikkaTheme.colors

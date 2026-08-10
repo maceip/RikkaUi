@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -23,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
+import zed.rainxch.rikkaicons.core.IconToken
 import zed.rainxch.rikkaui.components.ui.avatar.Avatar
+import zed.rainxch.rikkaui.components.ui.avatar.AvatarAnimation
 import zed.rainxch.rikkaui.components.ui.avatar.AvatarSize
 import zed.rainxch.rikkaui.components.ui.badge.Badge
 import zed.rainxch.rikkaui.components.ui.badge.BadgeSize
@@ -33,6 +34,7 @@ import zed.rainxch.rikkaui.components.ui.glass.GlassDefaults
 import zed.rainxch.rikkaui.components.ui.glass.GlassLevel
 import zed.rainxch.rikkaui.components.ui.glass.LocalGlassBackdrop
 import zed.rainxch.rikkaui.components.ui.icon.Icon
+import zed.rainxch.rikkaui.components.ui.icon.IconSize
 import zed.rainxch.rikkaui.components.ui.icon.RikkaIcons
 import zed.rainxch.rikkaui.components.ui.text.Text
 import zed.rainxch.rikkaui.components.ui.text.TextVariant
@@ -68,8 +70,8 @@ public object GlassSwipeDefaults {
     /** How far the row must travel before releasing commits the action. */
     public val SwipeThreshold: Dp = 56.dp
 
-    /** Size of the icon drawn on a revealed action panel. */
-    public val ActionIconSize: Dp = 24.dp
+    /** Size of the square an action icon is centred in on the revealed panel. */
+    public val ActionPanelSize: Dp = 48.dp
 }
 
 /**
@@ -150,22 +152,21 @@ private fun GlassSwipeAction.toSwipeAction(): SwipeAction =
 /** Builds a [GlassSwipeAction] from a RikkaUI icon, sized and tinted for the panel. */
 @Composable
 public fun rememberGlassSwipeAction(
-    icon: ImageVector,
+    icon: IconToken,
     background: Color,
     contentColor: Color,
     label: String,
     onSwipe: () -> Unit,
     weight: Double = 1.0,
     isUndo: Boolean = false,
-): GlassSwipeAction {
-    val iconSize = GlassSwipeDefaults.ActionIconSize
-    return remember(icon, background, contentColor, label, weight, isUndo, onSwipe) {
+): GlassSwipeAction =
+    remember(icon, background, contentColor, label, weight, isUndo, onSwipe) {
         GlassSwipeAction(
             onSwipe = onSwipe,
             background = background,
             icon = {
-                Box(Modifier.size(iconSize * 2), contentAlignment = Alignment.Center) {
-                    Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(iconSize))
+                Box(Modifier.size(GlassSwipeDefaults.ActionPanelSize), contentAlignment = Alignment.Center) {
+                    Icon(imageVector = icon, contentDescription = null, tint = contentColor, size = IconSize.Lg)
                 }
             },
             label = label,
@@ -173,7 +174,6 @@ public fun rememberGlassSwipeAction(
             isUndo = isUndo,
         )
     }
-}
 
 // ─── Call history ───────────────────────────────────────────
 
@@ -274,7 +274,15 @@ public fun CallHistoryItem(
                 horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.md),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(fallback = name, size = AvatarSize.Default)
+                // `fallback` renders verbatim, so it must be initials, not the
+                // name. No entrance animation either: a row in a list should not
+                // fade its avatar in on its own — the list's enter animation owns that.
+                Avatar(
+                    fallback = initialsOf(name),
+                    size = AvatarSize.Default,
+                    animation = AvatarAnimation.None,
+                    label = name,
+                )
 
                 Column(
                     modifier = Modifier.weight(1f),
@@ -316,6 +324,21 @@ private fun DirectionIcon(direction: CallDirection) {
         imageVector = icon,
         contentDescription = null,
         tint = tint,
-        modifier = Modifier.size(14.dp),
+        size = IconSize.Xs,
     )
+}
+
+/**
+ * First letters of the first and last word, capitalised — "Ada Lovelace" to "AL".
+ *
+ * [Avatar] renders its `fallback` verbatim, so a full name must be reduced
+ * before it gets there or it wraps and clips inside the circle.
+ */
+internal fun initialsOf(name: String): String {
+    val words = name.trim().split(' ', '\t').filter { it.isNotEmpty() }
+    return when (words.size) {
+        0 -> ""
+        1 -> words[0].take(1).uppercase()
+        else -> (words.first().take(1) + words.last().take(1)).uppercase()
+    }
 }

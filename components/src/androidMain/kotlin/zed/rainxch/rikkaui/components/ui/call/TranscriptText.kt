@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 import me.saket.extendedspans.ExtendedSpans
@@ -34,10 +35,11 @@ import me.saket.extendedspans.drawBehind as drawSpansBehind
  * }
  * ```
  *
- * @param color Pill colour behind the range.
+ * @param color Pill colour behind the range. Translucent by default: a solid
+ *   tint either vanishes on a light surface or swallows the text on a dark one.
  */
 @Composable
-public fun transcriptHighlight(color: Color = RikkaTheme.colors.primaryTinted): SpanStyle = SpanStyle(background = color)
+public fun transcriptHighlight(color: Color = RikkaTheme.colors.primary.copy(alpha = 0.25f)): SpanStyle = SpanStyle(background = color)
 
 /**
  * Marks a range of a transcript as *not yet settled* — words the recogniser is
@@ -106,10 +108,40 @@ public fun TranscriptText(
         }
 
     Text(
-        text = remember(text, spans) { spans.extend(text) },
+        text = remember(text, spans) { spans.extend(text).withoutNativeUnderlines() },
         modifier = modifier.drawSpansBehind(spans),
         variant = variant,
         color = color,
         onTextLayout = { spans.onTextLayout(it) },
     )
+}
+
+/**
+ * Strips `TextDecoration.Underline` while keeping everything else intact.
+ *
+ * `ExtendedSpans.extend` tags underlined ranges for the squiggle painter but
+ * leaves the decoration on the span, so Compose draws its own straight underline
+ * *as well* and tentative text ends up double-decorated. The tag lives in a
+ * string annotation rather than the span style, so clearing the decoration
+ * removes the duplicate without costing the squiggle.
+ */
+private fun AnnotatedString.withoutNativeUnderlines(): AnnotatedString {
+    if (spanStyles.none { it.item.textDecoration == TextDecoration.Underline }) return this
+
+    return buildAnnotatedString {
+        append(this@withoutNativeUnderlines.text)
+        this@withoutNativeUnderlines.spanStyles.forEach { range ->
+            val style =
+                if (range.item.textDecoration == TextDecoration.Underline) {
+                    range.item.copy(textDecoration = TextDecoration.None)
+                } else {
+                    range.item
+                }
+            addStyle(style, range.start, range.end)
+        }
+        this@withoutNativeUnderlines.paragraphStyles.forEach { addStyle(it.item, it.start, it.end) }
+        this@withoutNativeUnderlines
+            .getStringAnnotations(0, this@withoutNativeUnderlines.length)
+            .forEach { addStringAnnotation(it.tag, it.item, it.start, it.end) }
+    }
 }
