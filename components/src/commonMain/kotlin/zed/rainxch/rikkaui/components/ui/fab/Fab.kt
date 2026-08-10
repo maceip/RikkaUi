@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
@@ -241,6 +242,8 @@ public object FabDefaults {
  * @param colors Override resolved colors. Defaults to [FabDefaults.colors] for the [variant].
  * @param elevation Shadow elevation. Defaults to [RikkaTheme.elevation.high].
  * @param interactionSource Optional hoisted [MutableInteractionSource].
+ * @param shape Container shape, also used for the shadow. Defaults to [RikkaTheme.shapes.xl];
+ *   pass [RikkaTheme.shapes.full] for a circular FAB.
  */
 @Composable
 public fun Fab(
@@ -257,6 +260,7 @@ public fun Fab(
     colors: FabColorValues = FabDefaults.colors(variant),
     elevation: Dp = RikkaTheme.elevation.high,
     interactionSource: MutableInteractionSource? = null,
+    shape: Shape = RikkaTheme.shapes.xl,
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -267,7 +271,6 @@ public fun Fab(
     // ─── Resolved values ────────────────────────────────
     val motion = RikkaTheme.motion
     val sizeValues = FabDefaults.sizeValues(size)
-    val shape = RikkaTheme.shapes.xl
 
     val containerColor = colors.container(isEffectivelyEnabled)
     val contentColor = colors.content(isEffectivelyEnabled)
@@ -355,8 +358,20 @@ public fun Fab(
                     if (!isEffectivelyEnabled) {
                         disabled()
                     }
-                }.shadow(animatedElevation.dp, shape)
-                .background(animatedBackground, shape)
+                }
+                // Only an opaque container casts a shadow. The platform
+                // tessellates a shadow outline into a polygon, and a
+                // translucent fill — which is exactly what the disabled state
+                // is — lets that polygon show through as a faint octagon over
+                // the button's own face. Nothing that see-through reads as
+                // floating anyway, so dropping the shadow costs nothing.
+                .then(
+                    if (animatedBackground.alpha == 1f) {
+                        Modifier.shadow(animatedElevation.dp, shape)
+                    } else {
+                        Modifier
+                    },
+                ).background(animatedBackground, shape)
                 .clip(shape)
                 .clickable(
                     interactionSource = interactionSource,
@@ -427,6 +442,8 @@ public fun Fab(
  * @param colors Override resolved colors.
  * @param elevation Shadow elevation.
  * @param interactionSource Optional hoisted interaction source.
+ * @param shape Container shape, also used for the shadow. Defaults to [RikkaTheme.shapes.xl];
+ *   pass [RikkaTheme.shapes.full] for a circular FAB.
  * @param content Composable content displayed inside the FAB.
  */
 @Composable
@@ -442,6 +459,7 @@ public fun Fab(
     colors: FabColorValues = FabDefaults.colors(variant),
     elevation: Dp = RikkaTheme.elevation.high,
     interactionSource: MutableInteractionSource? = null,
+    shape: Shape = RikkaTheme.shapes.xl,
     content: @Composable () -> Unit,
 ) {
     @Suppress("NAME_SHADOWING")
@@ -452,7 +470,6 @@ public fun Fab(
 
     val motion = RikkaTheme.motion
     val sizeValues = FabDefaults.sizeValues(size)
-    val shape = RikkaTheme.shapes.xl
 
     val containerColor = colors.container(isEffectivelyEnabled)
     val contentColor = colors.content(isEffectivelyEnabled)
@@ -535,8 +552,20 @@ public fun Fab(
                     if (!isEffectivelyEnabled) {
                         disabled()
                     }
-                }.shadow(animatedElevation.dp, shape)
-                .background(animatedBackground, shape)
+                }
+                // Only an opaque container casts a shadow. The platform
+                // tessellates a shadow outline into a polygon, and a
+                // translucent fill — which is exactly what the disabled state
+                // is — lets that polygon show through as a faint octagon over
+                // the button's own face. Nothing that see-through reads as
+                // floating anyway, so dropping the shadow costs nothing.
+                .then(
+                    if (animatedBackground.alpha == 1f) {
+                        Modifier.shadow(animatedElevation.dp, shape)
+                    } else {
+                        Modifier
+                    },
+                ).background(animatedBackground, shape)
                 .clip(shape)
                 .clickable(
                     interactionSource = interactionSource,
