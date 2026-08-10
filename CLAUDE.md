@@ -57,6 +57,8 @@ foundation/src/commonMain/kotlin/zed/rainxch/rikkaui/foundation/
 
 components/src/commonMain/kotlin/zed/rainxch/rikkaui/components/ui/
     text/Text.kt          — BasicText wrapper with TextVariant enum, heading accessibility
+                             String + AnnotatedString overloads, both with onTextLayout
+                             (span painters need the TextLayoutResult) and inlineContent
                              Color resolution: explicit → LocalContentColor → variantColor()
     button/Button.kt      — 6 variants (Default/Secondary/Destructive/Outline/Ghost/Link), 4 sizes (Default/Sm/Lg/Icon), 3 animations
                              Provides LocalContentColor to children. Content lambda: @Composable () -> Unit
@@ -123,7 +125,27 @@ components/src/androidMain/kotlin/zed/rainxch/rikkaui/components/ui/glass/
     GlassButton.kt         — GlassButton + GlassIconButton + GlassButtonDefaults
     GlassPanel.kt          — Floating chrome (nav bars, sheets); hostsGlass = true by default
     GlassChip.kt           — Pill-shaped chip; selection promotes a level and crossfades the tint
+
+components/src/androidMain/kotlin/zed/rainxch/rikkaui/components/ui/call/
+    GlassDialpad.kt        — DialpadKey + GlassDialpadDefaults + GlassDialpad (12 circular glass keys,
+                             radial gradient lit from RikkaGlass.lightAngle, press = sink + brighten +
+                             refract, long-press 0 → + with a distinct haptic)
+    VoiceOrb.kt            — VoiceOrbState + VoiceOrb (glow / glass body / core / rotating specular).
+                             `amplitude: () -> Float` is read per frame in the draw phase and smoothed
+                             fast-attack slow-release. Freezes when GlassCapability is None.
+    CallHistory.kt         — GlassSwipeAction + GlassSwipeableRow + rememberGlassSwipeAction
+                             + CallDirection + CallHistoryItem (glass card, swipe delete/call-back)
+    TranscriptText.kt      — transcriptHighlight()/transcriptTentative() SpanStyles + TranscriptText
+                             (ExtendedSpans: rounded pills + animated squiggle)
+    IncomingCallSheet.kt   — TranscriptSpeaker + TranscriptLine + IncomingCallSheetDefaults
+                             + IncomingCallSheet (frosted GlassPanel, transcript bubbles, quick-reply
+                             chips, tinted Answer/Decline GlassButtons)
 ```
+
+**No Android sample app exists.** `:composeApp` is wasmJs-only and there is no
+`com.android.application` module, so `ui/glass/` and `ui/call/` compile but have
+never been run on a device or emulator. Adding a thin `:sample-android` module is
+the prerequisite for any visual verification of these two packages.
 
 **Why `androidMain`:** glass is the one Android-only corner of the library. It is
 built on `io.github.kyant0:backdrop`, an Android library — there is no multiplatform
@@ -140,7 +162,18 @@ deliberately a no-op rather than a crash. Glass surfaces must be siblings drawn
 a `CornerBasedShape` and throws `UnsupportedOperationException` otherwise. Go through
 `GlassDefaults.shape()` / `GlassButtonDefaults.shape()`, which cast safely.
 
-**Version pin:** `backdrop` is held at **1.0.0**. 2.x requires Kotlin 2.3.21.
+**Version pins (all three Android-only libs):**
+- `backdrop` **1.0.0** — 2.x requires Kotlin 2.3.21.
+- `swipe` **1.2.0** — the last release with an Android target. 1.3.0 converted to
+  Compose Multiplatform and publishes common/iOS/JVM only, with **no Android
+  variant**, so it cannot be consumed from `androidMain` where glass lives.
+  Don't "upgrade" it; check `repo1.maven.org/maven2/me/saket/swipe/` first.
+- `extendedspans` **1.4.0** — Android `aar`. Depends only on `compose.ui` +
+  `compose.foundation`, so it does not breach the no-Material3 rule.
+
+Both saket libs are `implementation`, not `api`: they are wrapped behind
+`GlassSwipeAction` and `TranscriptText` so no third-party type reaches a public
+signature. Copy-paste consumers get them via registry dependencies instead.
 
 **Capability tiering, not `SDK_INT` checks.** `GlassCapability` is the single place
 the platform is negotiated: `Full` (API 33+, blur + lens), `Blur` (API 31–32, tint
@@ -490,8 +523,8 @@ ktlint { ignoreFailures = true }
 
 ## Icon System
 
-- 30 Lucide-style icons as lazy `ImageVector` definitions in `RikkaIcons.kt`
-- Icons: ChevronRight/Down/Left/Up, Check, X, Plus, Minus, Search, ArrowLeft/Right/Up/Down, Menu, MoreHorizontal/Vertical, Mail, User, Heart, Star, Eye, Copy, Trash, Edit, Download, Upload, Sun, Moon, Settings, Send
+- 32 Lucide-style icons as lazy `ImageVector` definitions in `RikkaIcons.kt`
+- Icons: ChevronRight/Down/Left/Up, Check, X, Plus, Minus, Search, ArrowLeft/Right/Up/Down, Menu, MoreHorizontal/Vertical, Mail, User, Heart, Star, Eye, Copy, Trash, Edit, Download, Upload, Sun, Moon, Settings, Send, Phone, Mic
 - Helper extensions: `strokePath()`, `fillPath()`, `circle()`, `roundRect()`
 - Icon font multi-pack system — **deferred to separate project**
 

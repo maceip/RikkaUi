@@ -492,6 +492,57 @@ public object RikkaIcons {
         }
     }
 
+    // ── Telephony ───────────────────────────────────────────
+
+    public val Phone: ImageVector by lazy {
+        lucideIcon("Phone") {
+            strokePath {
+                moveTo(22f, 16.92f)
+                verticalLineToRelative(3f)
+                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -2.18f, 2f)
+                arcToRelative(19.79f, 19.79f, 0f, isMoreThanHalf = false, isPositiveArc = true, -8.63f, -3.07f)
+                arcToRelative(19.5f, 19.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -6f, -6f)
+                arcToRelative(19.79f, 19.79f, 0f, isMoreThanHalf = false, isPositiveArc = true, -3.07f, -8.67f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 4.11f, 2f)
+                horizontalLineToRelative(3f)
+                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 2f, 1.72f)
+                arcToRelative(12.84f, 12.84f, 0f, isMoreThanHalf = false, isPositiveArc = false, 0.7f, 2.81f)
+                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.45f, 2.11f)
+                lineTo(8.09f, 9.91f)
+                arcToRelative(16f, 16f, 0f, isMoreThanHalf = false, isPositiveArc = false, 6f, 6f)
+                lineToRelative(1.27f, -1.27f)
+                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 2.11f, -0.45f)
+                arcToRelative(12.84f, 12.84f, 0f, isMoreThanHalf = false, isPositiveArc = false, 2.81f, 0.7f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 22f, 16.92f)
+                close()
+            }
+        }
+    }
+
+    public val Mic: ImageVector by lazy {
+        lucideIcon("Mic") {
+            strokePath {
+                moveTo(12f, 2f)
+                arcToRelative(3f, 3f, 0f, isMoreThanHalf = false, isPositiveArc = false, -3f, 3f)
+                verticalLineToRelative(7f)
+                arcToRelative(3f, 3f, 0f, isMoreThanHalf = false, isPositiveArc = false, 6f, 0f)
+                verticalLineTo(5f)
+                arcToRelative(3f, 3f, 0f, isMoreThanHalf = false, isPositiveArc = false, -3f, -3f)
+                close()
+            }
+            strokePath {
+                moveTo(19f, 10f)
+                verticalLineToRelative(2f)
+                arcToRelative(7f, 7f, 0f, isMoreThanHalf = false, isPositiveArc = true, -14f, 0f)
+                verticalLineToRelative(-2f)
+            }
+            strokePath {
+                moveTo(12f, 19f)
+                verticalLineToRelative(3f)
+            }
+        }
+    }
+
     // ── Settings ────────────────────────────────────────────
 
     public val Settings: ImageVector by lazy {

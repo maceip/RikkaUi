@@ -18,6 +18,13 @@ kotlinx-serialization = "1.8.1"
 # Liquid glass effects (Android only — the KMP variants of this library require
 # Compose Multiplatform 1.11, which is ahead of the 1.10 this project targets).
 backdrop = "1.0.0"
+# Swipe-to-reveal actions. Held at 1.2.0, the last release with an Android
+# target: 1.3.0 converted to Compose Multiplatform and publishes common/iOS/JVM
+# only, so it cannot be consumed from androidMain where the glass components live.
+swipe = "1.2.0"
+# Rounded-background and squiggly-underline span painters for AnnotatedString.
+# Android only (aar). Depends on compose.ui + compose.foundation, no Material.
+extendedspans = "1.4.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -39,6 +46,8 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
+swipe = { module = "me.saket.swipe:swipe", version.ref = "swipe" }
+extendedspans = { module = "me.saket.extendedspans:extendedspans", version.ref = "extendedspans" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

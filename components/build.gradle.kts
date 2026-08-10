@@ -60,6 +60,12 @@ kotlin {
                 // `api`, not `implementation`: the glass components expose
                 // Backdrop/LayerBackdrop in their public signatures.
                 api(libs.backdrop)
+                // `implementation`: both are wrapped behind RikkaUI types
+                // (GlassSwipeAction, TranscriptText) so neither leaks into a
+                // public signature. Copy-paste consumers get them listed as
+                // registry dependencies instead.
+                implementation(libs.swipe)
+                implementation(libs.extendedspans)
             }
         }
     }
