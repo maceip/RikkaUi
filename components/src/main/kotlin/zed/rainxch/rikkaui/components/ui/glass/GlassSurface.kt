@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -236,6 +237,39 @@ public fun Modifier.glassSurface(
         },
     )
 }
+
+/**
+ * Memoised [glassSurface] for composable call sites.
+ *
+ * [Modifier.glassSurface] builds fresh effect lambdas on every call, and the
+ * underlying `drawBackdrop` element compares those by identity — so any
+ * recomposition that re-evaluates the modifier chain rebuilds native
+ * `RenderEffect`s. Remembering the element keeps the glass graph alive across
+ * parent recompositions when [backdrop], [style], [shape], and the press
+ * lambdas are stable (as they are when produced by [rememberGlassStyle] /
+ * [rememberGlassPressState]).
+ */
+@Composable
+public fun Modifier.rememberGlassSurface(
+    backdrop: Backdrop,
+    style: GlassStyle,
+    shape: CornerBasedShape,
+    pressFraction: () -> Float = AtRest,
+    exportedBackdrop: LayerBackdrop? = null,
+    layerBlock: (GraphicsLayerScope.() -> Unit)? = null,
+): Modifier =
+    this.then(
+        remember(backdrop, style, shape, pressFraction, exportedBackdrop, layerBlock) {
+            Modifier.glassSurface(
+                backdrop = backdrop,
+                style = style,
+                shape = shape,
+                pressFraction = pressFraction,
+                exportedBackdrop = exportedBackdrop,
+                layerBlock = layerBlock,
+            )
+        },
+    )
 
 // ─── Component ──────────────────────────────────────────────
 

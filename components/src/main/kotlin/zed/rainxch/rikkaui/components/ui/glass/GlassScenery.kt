@@ -68,21 +68,31 @@ public fun GlassScenery(
     animated: Boolean = true,
 ) {
     val capability = LocalGlassCapability.current
-    // A perpetually animating full-screen background is the wrong thing to keep
-    // running on a device that has asked for power saving.
-    val drifting = animated && capability != GlassCapability.None && scenery.driftFraction > 0f
+    // A perpetually animating full-screen background invalidates every glass
+    // consumer sampling it. Drift only when the device can afford Full glass;
+    // Blur/None get a static scene.
+    val drifting =
+        animated &&
+            capability == GlassCapability.Full &&
+            scenery.driftFraction > 0f
 
-    val transition = rememberInfiniteTransition(label = "scenery")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (drifting) 1f else 0f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = DRIFT_PERIOD_MILLIS, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "sceneryPhase",
-    )
+    val phase =
+        if (drifting) {
+            val transition = rememberInfiniteTransition(label = "scenery")
+            val animatedPhase by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = DRIFT_PERIOD_MILLIS, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "sceneryPhase",
+            )
+            animatedPhase
+        } else {
+            0f
+        }
 
     val density = LocalDensity.current
     val grain =

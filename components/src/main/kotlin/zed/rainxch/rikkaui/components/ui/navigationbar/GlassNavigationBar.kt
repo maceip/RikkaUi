@@ -39,11 +39,11 @@ import kotlin.math.roundToInt
 /**
  * Ceiling on the indicator's travel deformation, as a fraction of its size.
  *
- * Past roughly a tenth the pill stops reading as a heavy liquid and starts
+ * Past roughly eight percent the pill stops reading as a heavy liquid and starts
  * reading as rubber, so the stretch saturates here rather than tracking velocity
  * all the way up.
  */
-private const val INDICATOR_MAX_STRETCH: Float = 0.12f
+private const val INDICATOR_MAX_STRETCH: Float = 0.08f
 
 /**
  * Travel speed, in slot widths per second, at which the stretch reaches
@@ -134,9 +134,8 @@ private const val INDICATOR_STRETCH_FULL_SPEED: Float = 10f
  * @param contentPadding Inset between the bar edge and the items. The indicator
  *   lives inside it, so this is also the gap it keeps from the bar's rim.
  * @param animationSpec Spec the indicator travels on. Defaults to the theme's
- *   spatial spring, which is under-damped — the slight overshoot on arrival is
- *   half of what sells the material — and which honours motion presets rather
- *   than hard-coding a feel this component has no business deciding.
+ *   snap spatial spring — stiff, no bounce — so the pill settles quickly on
+ *   mid-range GPUs that are already sampling glass every frame of travel.
  * @param content [RowScope] content lambda, one [NavigationBarItem] per tab.
  */
 @Composable
@@ -150,7 +149,7 @@ public fun GlassNavigationBar(
     shape: CornerBasedShape = GlassButtonDefaults.shape(),
     indicatorShape: CornerBasedShape = GlassButtonDefaults.shape(),
     contentPadding: PaddingValues = PaddingValues(RikkaTheme.spacing.xs),
-    animationSpec: AnimationSpec<Float> = RikkaTheme.motion.spatialDefault(),
+    animationSpec: AnimationSpec<Float> = RikkaTheme.motion.spatialSnap(),
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassPanel(

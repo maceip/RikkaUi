@@ -121,8 +121,13 @@ public fun RikkaTheme(
  *     accent = RikkaAccentPreset.Blue,
  *     isDark = true,
  *     preset = RikkaStylePreset.Vega,
+ *     scenery = triplexScenery(isDark = true),
  * ) { ... }
  * ```
+ *
+ * @param scenery Atmospheric backdrop for glass. Defaults to the stock Rikka
+ *   scene for [isDark]; pass a brand scene (e.g. Triplex violet/cyan) to install
+ *   it app-wide via [RikkaTheme.scenery] / [LocalRikkaScenery].
  */
 @Composable
 public fun RikkaTheme(
@@ -134,6 +139,7 @@ public fun RikkaTheme(
         rikkaTypography(
             scale = preset.typeScale,
         ),
+    scenery: RikkaScenery = rikkaScenery(isDark),
     content: @Composable () -> Unit,
 ) {
     val colors = accent.applyTo(palette.resolve(isDark), isDark)
@@ -146,7 +152,7 @@ public fun RikkaTheme(
         // `isDark` is known here, so use it directly rather than inferring
         // the mode from background luminance.
         glass = rikkaGlass(isDark),
-        scenery = rikkaScenery(isDark),
+        scenery = scenery,
         content = content,
     )
 }

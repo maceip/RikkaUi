@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
@@ -21,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -38,11 +41,11 @@ import zed.rainxch.rikkaui.components.ui.glass.GlassCapability
 import zed.rainxch.rikkaui.components.ui.glass.GlassLevel
 import zed.rainxch.rikkaui.components.ui.glass.GlassStyle
 import zed.rainxch.rikkaui.components.ui.glass.LocalGlassBackdrop
-import zed.rainxch.rikkaui.components.ui.glass.glassSurface
+import zed.rainxch.rikkaui.components.ui.glass.LocalGlassCapability
 import zed.rainxch.rikkaui.components.ui.glass.rememberGlassPressState
 import zed.rainxch.rikkaui.components.ui.glass.rememberGlassStyle
+import zed.rainxch.rikkaui.components.ui.glass.rememberGlassSurface
 import zed.rainxch.rikkaui.components.ui.text.Text
-import zed.rainxch.rikkaui.components.ui.text.TextVariant
 import zed.rainxch.rikkaui.foundation.RikkaTheme
 
 // ─── Model ──────────────────────────────────────────────────
@@ -81,6 +84,12 @@ public object GlassDialpadDefaults {
             DialpadKey('#'),
         )
 
+    /**
+     * ITU-T keys for a live-line tone pad: no letter row, no long-press `+`.
+     * Use this from an in-call DTMF surface rather than rebuilding the list.
+     */
+    public val ToneKeys: List<DialpadKey> = "123456789*0#".map { DialpadKey(it) }
+
     public val KeySize: Dp = 72.dp
 }
 
@@ -89,15 +98,18 @@ public object GlassDialpadDefaults {
 /**
  * A dial pad of circular glass keys.
  *
- * Each key is a lens rather than a button: it refracts whatever the pad is laid
- * over, lit by a radial gradient offset toward the theme's light source so the
- * grid reads as a tray of glass beads lit from one direction rather than twelve
- * independently glowing discs.
+ * On [GlassCapability.Full] each key is its own lens — twelve samplers that
+ * refract independently so the pad reads as a tray of glass beads. Below Full
+ * (Blur / None) that cost is indefensible: the pad collapses to **one** glass
+ * surface and the keys become lit circles drawn over it. The radial dome and
+ * rim already carry most of the read, so the look survives without twelve
+ * `RenderEffect` chains.
  *
- * Pressing a key sinks it, brightens it, and refracts harder — all in the draw
- * and layer phases, so a fast dialer does not recompose per keystroke. Keys with
- * a [DialpadKey.longPressDigit] fire a distinct haptic on the long press, which
- * is the only feedback that tells you `0` turned into `+` without looking.
+ * Pressing a key sinks it, brightens it, and (on Full) refracts harder — all in
+ * the draw and layer phases, so a fast dialer does not recompose per keystroke.
+ * Keys with a [DialpadKey.longPressDigit] fire a distinct haptic on the long
+ * press, which is the only feedback that tells you `0` turned into `+` without
+ * looking.
  *
  * ```
  * var number by remember { mutableStateOf("") }
@@ -111,8 +123,9 @@ public object GlassDialpadDefaults {
  * @param keys Key layout, chunked into rows of three. Defaults to the standard pad.
  * @param keySize Diameter of each key; also its touch target.
  * @param enabled Whether keys respond to input.
- * @param level [GlassLevel] for the keys. Subtle by default — keys sit *on* the
- *   dialer surface rather than floating above it.
+ * @param level [GlassLevel] for the keys (Full) or the pad tray (below Full).
+ *   Subtle by default — keys sit *on* the dialer surface rather than floating
+ *   above it.
  * @param backdrop What shows through; taken from [LocalGlassBackdrop] by default.
  * @param spacing Gap between keys, horizontally and vertically.
  */
@@ -127,27 +140,65 @@ public fun GlassDialpad(
     backdrop: Backdrop = LocalGlassBackdrop.current,
     spacing: Dp = RikkaTheme.spacing.lg,
 ) {
+    val capability = LocalGlassCapability.current
     val style = rememberGlassStyle(level = level)
+    // One sampler for the whole pad below Full — twelve independent lenses are
+    // the single hottest draw cost on mid-range devices.
+    val singleSurface = capability != GlassCapability.Full
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(spacing),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        keys.chunked(3).forEach { row ->
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(spacing),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                row.forEach { key ->
-                    DialpadKeyButton(
-                        key = key,
-                        size = keySize,
-                        style = style,
+    if (singleSurface) {
+        Column(
+            modifier =
+                modifier
+                    .rememberGlassSurface(
                         backdrop = backdrop,
-                        enabled = enabled,
-                        onKeyPress = onKeyPress,
-                    )
+                        style = style,
+                        shape = RoundedCornerShape(percent = 28),
+                    ).padding(spacing),
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            keys.chunked(3).forEach { row ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    row.forEach { key ->
+                        DialpadKeyButton(
+                            key = key,
+                            size = keySize,
+                            style = style,
+                            backdrop = backdrop,
+                            enabled = enabled,
+                            onKeyPress = onKeyPress,
+                            sampleGlass = false,
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            keys.chunked(3).forEach { row ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    row.forEach { key ->
+                        DialpadKeyButton(
+                            key = key,
+                            size = keySize,
+                            style = style,
+                            backdrop = backdrop,
+                            enabled = enabled,
+                            onKeyPress = onKeyPress,
+                            sampleGlass = true,
+                        )
+                    }
                 }
             }
         }
@@ -165,27 +216,74 @@ private fun DialpadKeyButton(
     backdrop: Backdrop,
     enabled: Boolean,
     onKeyPress: (Char) -> Unit,
+    sampleGlass: Boolean,
 ) {
     val haptics = LocalHapticFeedback.current
 
     val interactionSource = remember { MutableInteractionSource() }
     val press = rememberGlassPressState(interactionSource, enabled = enabled)
 
-    // Glass keys are laid over arbitrary scenery, so the glyph is white with a
-    // shadow rather than a theme colour — the shadow is what keeps it readable
-    // when the backdrop behind a key happens to be pale.
-    val glyphStyle =
-        TextStyle(
-            fontWeight = FontWeight.Light,
-            shadow =
+    // Glyph styles depend only on the digit; remember them so a parent
+    // recomposition (e.g. dial-string updates) does not allocate 12× Shadow/TextStyle.
+    val digitStyle =
+        remember(key.digit) {
+            val glyphShadow =
                 Shadow(
-                    color = Color.Black.copy(alpha = 0.35f),
+                    color = Color.Black.copy(alpha = 0.28f),
                     offset = Offset(0f, 1f),
-                    blurRadius = 6f,
+                    blurRadius = 2.5f,
+                )
+            // Dialpad-local sizing — not H3. Heading leading (~1.33x) plus wide
+            // glyphs (* / #) overflow the circular lens at Prominent refraction.
+            val digitSize = if (key.digit == '*' || key.digit == '#') 17.sp else 20.sp
+            TextStyle(
+                fontSize = digitSize,
+                lineHeight = digitSize,
+                fontWeight = FontWeight.Light,
+                shadow = glyphShadow,
+            )
+        }
+    val lettersStyle =
+        remember {
+            TextStyle(
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+                letterSpacing = 1.sp,
+                fontWeight = FontWeight.Light,
+                shadow =
+                    Shadow(
+                        color = Color.Black.copy(alpha = 0.28f),
+                        offset = Offset(0f, 1f),
+                        blurRadius = 2.5f,
+                    ),
+            )
+        }
+    val rimAlpha = if (style.capability == GlassCapability.None && sampleGlass) 0f else 0.45f
+    val rimBrush =
+        remember(rimAlpha) {
+            Brush.linearGradient(
+                listOf(
+                    Color.White.copy(alpha = rimAlpha),
+                    Color.White.copy(alpha = 0f),
                 ),
-        )
+            )
+        }
 
     val description = if (key.letters.isEmpty()) key.digit.toString() else "${key.digit} ${key.letters}"
+
+    val glassModifier =
+        if (sampleGlass) {
+            Modifier.rememberGlassSurface(
+                backdrop = backdrop,
+                style = style,
+                shape = CircleShape,
+                pressFraction = press.pressFraction,
+                layerBlock = press.layerBlock,
+            )
+        } else {
+            // Draw-phase press sink without a second backdrop sampler.
+            Modifier.graphicsLayer(press.layerBlock)
+        }
 
     Box(
         modifier =
@@ -194,15 +292,8 @@ private fun DialpadKeyButton(
                 .semantics {
                     contentDescription = description
                     role = Role.Button
-                }.glassSurface(
-                    backdrop = backdrop,
-                    style = style,
-                    shape = CircleShape,
-                    pressFraction = press.pressFraction,
-                    layerBlock = press.layerBlock,
-                ).drawWithCache {
-                    // Built once per size change, then only re-run on draw — the
-                    // press brightness reads its fraction inside the draw block.
+                }.then(glassModifier)
+                .drawWithCache {
                     val lit =
                         Brush.radialGradient(
                             colors = listOf(Color.White.copy(alpha = 0.28f), Color.Transparent),
@@ -216,13 +307,7 @@ private fun DialpadKeyButton(
                     }
                 }.border(
                     width = 1.dp,
-                    brush =
-                        Brush.linearGradient(
-                            listOf(
-                                Color.White.copy(alpha = if (style.capability == GlassCapability.None) 0f else 0.45f),
-                                Color.White.copy(alpha = 0f),
-                            ),
-                        ),
+                    brush = rimBrush,
                     shape = CircleShape,
                 ).clip(CircleShape)
                 .combinedClickable(
@@ -243,20 +328,22 @@ private fun DialpadKeyButton(
                 ),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+        ) {
             Text(
                 text = key.digit.toString(),
-                variant = TextVariant.H3,
                 color = if (enabled) Color.White else Color.White.copy(alpha = 0.4f),
                 textAlign = TextAlign.Center,
-                style = glyphStyle,
+                style = digitStyle,
             )
             if (key.letters.isNotEmpty()) {
                 Text(
                     text = key.letters,
                     color = Color.White.copy(alpha = if (enabled) 0.7f else 0.3f),
                     textAlign = TextAlign.Center,
-                    style = glyphStyle.copy(fontSize = 10.sp, letterSpacing = 1.sp),
+                    style = lettersStyle,
                 )
             }
         }

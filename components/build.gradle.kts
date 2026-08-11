@@ -42,7 +42,7 @@ dependencies {
 
     // `api`: the glass components expose Backdrop/LayerBackdrop in their signatures.
     api(libs.backdrop)
-    // `implementation`: wrapped behind GlassSwipeAction and TranscriptText, so
+    // `implementation`: wrapped behind SwipeableRow and TranscriptText, so
     // neither reaches a public signature.
     implementation(libs.swipe)
     implementation(libs.extendedspans)

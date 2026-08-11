@@ -21,6 +21,8 @@ import com.kyant.backdrop.Backdrop
 import zed.rainxch.rikkaui.foundation.LocalContentColor
 import zed.rainxch.rikkaui.foundation.RikkaTheme
 
+private val StaticPressFraction: () -> Float = { 0f }
+
 /**
  * The glass counterpart to [zed.rainxch.rikkaui.components.ui.card.Card].
  *
@@ -68,11 +70,17 @@ public fun GlassCard(
     val style = rememberGlassStyle(level = level, tint = tint)
     val exported = if (hostsGlass) rememberGlassBackdrop() else null
 
-    val interactionSource = remember { MutableInteractionSource() }
-    val press = rememberGlassPressState(interactionSource, enabled = enabled && onClick != null)
+    val interactive = onClick != null
+    val interactionSource = if (interactive) remember { MutableInteractionSource() } else null
+    val press =
+        if (interactionSource != null) {
+            rememberGlassPressState(interactionSource, enabled = enabled)
+        } else {
+            null
+        }
 
     val clickModifier =
-        if (onClick != null) {
+        if (onClick != null && interactionSource != null) {
             Modifier.clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -94,15 +102,17 @@ public fun GlassCard(
                     .semantics(mergeDescendants = true) {
                         if (label.isNotEmpty()) contentDescription = label
                         if (!enabled && onClick != null) disabled()
-                    }.glassSurface(
+                    }.rememberGlassSurface(
                         backdrop = backdrop,
                         style = style,
                         shape = shape,
-                        pressFraction = press.pressFraction,
+                        pressFraction = press?.pressFraction ?: StaticPressFraction,
                         exportedBackdrop = exported,
                         // Scale through the backdrop layer so the refracted
                         // scenery stays anchored while the card presses in.
-                        layerBlock = press.layerBlock,
+                        // Null when static: avoids a graphicsLayer transform path
+                        // and press collectors on decorative cards.
+                        layerBlock = press?.layerBlock,
                     ).clip(shape)
                     .then(clickModifier)
                     .padding(contentPadding),

@@ -113,7 +113,7 @@ fun CallHistoryScene() {
                 detail = "+1 555 0134",
                 timestamp = "2 min",
                 direction = CallDirection.Missed,
-                agentBadge = "AGENT",
+                badge = "AGENT",
                 deleteLabel = "Delete",
                 callBackLabel = "Call back",
                 onDelete = {},
