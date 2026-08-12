@@ -1,0 +1,18 @@
+{
+  "name": "RikkaUI",
+  "user": "ubuntu",
+  "install": "./gradlew :cli:shadowJar --no-parallel --max-workers=1 && cp cli/build/libs/rikkaui.jar composeApp/src/webMain/resources/rikkaui.jar && ./gradlew :composeApp:wasmJsBrowserDevelopmentExecutableDistribution --no-parallel --max-workers=1 && npx --yes serve --version > /dev/null 2>&1",
+  "terminals": [
+    {
+      "name": "website",
+      "command": "npx --yes serve composeApp/build/dist/wasmJs/developmentExecutable -l 3000 --no-clipboard",
+      "description": "Serves the pre-built RikkaUI showcase (Compose WasmJs) on http://localhost:3000. Rebuild with ./gradlew :composeApp:wasmJsBrowserDevelopmentExecutableDistribution, then restart this terminal."
+    }
+  ],
+  "ports": [
+    {
+      "name": "RikkaUI showcase website",
+      "port": 3000
+    }
+  ]
+}
