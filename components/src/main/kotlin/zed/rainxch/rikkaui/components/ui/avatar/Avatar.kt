@@ -36,6 +36,9 @@ public enum class AvatarSize {
 
     /** 48dp — prominent placement. */
     Lg,
+
+    /** 64dp — favourite strips and contact heroes. */
+    Xl,
 }
 
 // ─── Animation ──────────────────────────────────────────────
@@ -91,6 +94,8 @@ public enum class AvatarStatus {
  * @param label Accessibility content description; defaults to [fallback] text.
  * @param containerColor Fill behind the initials. Defaults to [RikkaTheme.colors.muted];
  *   pass a translucent tint over glass so the avatar does not punch a black hole.
+ * @param contentColor Glyph colour. Defaults to [RikkaTheme.colors.onMuted]; pass
+ *   a brighter colour when [containerColor] is a faint wash over dark scenery.
  */
 @Composable
 public fun Avatar(
@@ -101,10 +106,12 @@ public fun Avatar(
     status: AvatarStatus? = null,
     label: String? = null,
     containerColor: Color = Color.Unspecified,
+    contentColor: Color = Color.Unspecified,
 ) {
     val resolved = resolveSizeValues(size)
     val shape = RikkaTheme.shapes.full
     val fill = if (containerColor.isSpecified) containerColor else RikkaTheme.colors.muted
+    val glyph = if (contentColor.isSpecified) contentColor else RikkaTheme.colors.onMuted
     val motion = RikkaTheme.motion
 
     // Entrance animation state
@@ -190,7 +197,7 @@ public fun Avatar(
         Text(
             text = fallback,
             variant = resolved.textVariant,
-            color = RikkaTheme.colors.onMuted,
+            color = glyph,
         )
     }
 }
@@ -221,6 +228,13 @@ private fun resolveSizeValues(size: AvatarSize): AvatarSizeValues =
         AvatarSize.Lg -> {
             AvatarSizeValues(
                 diameter = 48.dp,
+                textVariant = TextVariant.Large,
+            )
+        }
+
+        AvatarSize.Xl -> {
+            AvatarSizeValues(
+                diameter = 64.dp,
                 textVariant = TextVariant.Large,
             )
         }

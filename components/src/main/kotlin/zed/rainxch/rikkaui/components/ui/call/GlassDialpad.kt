@@ -90,6 +90,13 @@ public object GlassDialpadDefaults {
     public val ToneKeys: List<DialpadKey> = "123456789*0#".map { DialpadKey(it) }
 
     public val KeySize: Dp = 72.dp
+
+    /**
+     * Corner radius of the single-surface Blur tray. Half a key so the tray
+     * shares the keys' circle family without collapsing into a capsule that
+     * clips `*` / `#` at the corners ([RoundedCornerShape] percent 50 does).
+     */
+    public val TrayCornerRadius: Dp = KeySize / 2
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -152,9 +159,9 @@ public fun GlassDialpad(
                     .rememberGlassSurface(
                         backdrop = backdrop,
                         style = style,
-                        // Fully stadium ends — same circle family as the keys,
-                        // not a squircle card with mismatched corner radius.
-                        shape = RoundedCornerShape(percent = 50),
+                        // Absolute radius, not percent: percent 50 turns a near-
+                        // square pad into a circle and clips the corner keys.
+                        shape = RoundedCornerShape(GlassDialpadDefaults.TrayCornerRadius),
                     ).padding(spacing),
             verticalArrangement = Arrangement.spacedBy(spacing),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -230,17 +237,17 @@ private fun DialpadKeyButton(
         remember(key.digit) {
             val glyphShadow =
                 Shadow(
-                    color = Color.Black.copy(alpha = 0.28f),
-                    offset = Offset(0f, 1f),
-                    blurRadius = 2.5f,
+                    color = Color.Black.copy(alpha = 0.72f),
+                    offset = Offset(0f, 1.5f),
+                    blurRadius = 4f,
                 )
             // Dialpad-local sizing — not H3. Heading leading (~1.33x) plus wide
             // glyphs (* / #) overflow the circular lens at Prominent refraction.
-            val digitSize = if (key.digit == '*' || key.digit == '#') 17.sp else 20.sp
+            val digitSize = if (key.digit == '*' || key.digit == '#') 22.sp else 26.sp
             TextStyle(
                 fontSize = digitSize,
                 lineHeight = digitSize,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.SemiBold,
                 shadow = glyphShadow,
             )
         }
@@ -250,12 +257,12 @@ private fun DialpadKeyButton(
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
                 letterSpacing = 1.sp,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.Medium,
                 shadow =
                     Shadow(
-                        color = Color.Black.copy(alpha = 0.28f),
+                        color = Color.Black.copy(alpha = 0.65f),
                         offset = Offset(0f, 1f),
-                        blurRadius = 2.5f,
+                        blurRadius = 3f,
                     ),
             )
         }
@@ -292,13 +299,7 @@ private fun DialpadKeyButton(
                     role = Role.Button
                 }.then(glassModifier)
                 .drawWithCache {
-                    // Tight specular — a bead highlight, not a face-wide wash.
-                    val lit =
-                        Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.34f), Color.Transparent),
-                            center = Offset(this.size.width * 0.30f, this.size.height * 0.24f),
-                            radius = this.size.maxDimension * 0.48f,
-                        )
+                    // Specular kept soft — a bright wash washed out white glyphs.
                     val radians = Math.toRadians(lightAngle.toDouble())
                     val dx = kotlin.math.cos(radians).toFloat()
                     val dy = kotlin.math.sin(radians).toFloat()
@@ -321,7 +322,20 @@ private fun DialpadKeyButton(
                                 ),
                         )
                     onDrawWithContent {
-                        drawCircle(lit)
+                        // Dark disc under the glyphs so white digits stay readable
+                        // on the bright Blur-tier tray glow.
+                        drawCircle(Color.Black.copy(alpha = 0.28f))
+                        drawCircle(
+                            Brush.radialGradient(
+                                colors =
+                                    listOf(
+                                        Color.White.copy(alpha = 0.14f),
+                                        Color.Transparent,
+                                    ),
+                                center = Offset(this.size.width * 0.30f, this.size.height * 0.24f),
+                                radius = this.size.maxDimension * 0.48f,
+                            ),
+                        )
                         val brightness = press.pressFraction() * 0.2f
                         if (brightness > 0f) drawCircle(Color.White.copy(alpha = brightness))
                         drawContent()
