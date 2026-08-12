@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.kyant.backdrop.Backdrop
@@ -136,6 +137,11 @@ private const val INDICATOR_STRETCH_FULL_SPEED: Float = 10f
  * @param animationSpec Spec the indicator travels on. Defaults to the theme's
  *   snap spatial spring — stiff, no bounce — so the pill settles quickly on
  *   mid-range GPUs that are already sampling glass every frame of travel.
+ * @param maxIndicatorWidth Ceiling on the travelling pill's width. When the
+ *   equal-width slot is wider than this (unfolded phones, tablets), the pill
+ *   stays this wide and is centred in its slot so it does not become a half-
+ *   screen slab behind a short label. Null (default) keeps the historical
+ *   fill-the-slot behaviour.
  * @param content [RowScope] content lambda, one [NavigationBarItem] per tab.
  */
 @Composable
@@ -150,6 +156,7 @@ public fun GlassNavigationBar(
     indicatorShape: CornerBasedShape = GlassButtonDefaults.shape(),
     contentPadding: PaddingValues = PaddingValues(RikkaTheme.spacing.xs),
     animationSpec: AnimationSpec<Float> = RikkaTheme.motion.spatialSnap(),
+    maxIndicatorWidth: Dp? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
     GlassPanel(
@@ -177,7 +184,13 @@ public fun GlassNavigationBar(
             } else {
                 0f
             }
-        val targetOffsetPx = selectedIndex.coerceIn(0, (itemCount - 1).coerceAtLeast(0)) * slotWidthPx
+        val maxIndicatorWidthPx =
+            maxIndicatorWidth?.let { with(density) { it.toPx() } } ?: Float.POSITIVE_INFINITY
+        val indicatorWidthPx = slotWidthPx.coerceAtMost(maxIndicatorWidthPx)
+        // Centre a capped pill inside its equal-width slot.
+        val slotInsetPx = ((slotWidthPx - indicatorWidthPx) / 2f).coerceAtLeast(0f)
+        val targetOffsetPx =
+            selectedIndex.coerceIn(0, (itemCount - 1).coerceAtLeast(0)) * slotWidthPx + slotInsetPx
 
         val indicatorOffsetPx = remember { Animatable(0f) }
         // Last width the indicator was placed against. Distinguishes "the bar
@@ -186,7 +199,7 @@ public fun GlassNavigationBar(
         // would fling the pill out of a bogus zero-width layout.
         var placedAgainstWidth by remember { mutableStateOf(0f) }
 
-        LaunchedEffect(targetOffsetPx, slotWidthPx) {
+        LaunchedEffect(targetOffsetPx, slotWidthPx, indicatorWidthPx) {
             if (slotWidthPx <= 0f) return@LaunchedEffect
             if (placedAgainstWidth != slotWidthPx) {
                 placedAgainstWidth = slotWidthPx
@@ -196,7 +209,7 @@ public fun GlassNavigationBar(
             }
         }
 
-        if (slotWidthPx > 0f) {
+        if (indicatorWidthPx > 0f) {
             Box(
                 modifier =
                     Modifier
@@ -205,7 +218,7 @@ public fun GlassNavigationBar(
                         // offset mirrors, and so does the row it indexes into.
                         .offset { IntOffset(x = indicatorOffsetPx.value.roundToInt(), y = 0) }
                         .size(
-                            width = with(density) { slotWidthPx.toDp() },
+                            width = with(density) { indicatorWidthPx.toDp() },
                             height = with(density) { rowSize.height.toDp() },
                         ).glassSurface(
                             backdrop = indicatorBackdrop,
@@ -214,8 +227,15 @@ public fun GlassNavigationBar(
                             layerBlock = {
                                 // Draw-phase read of the spring's own velocity —
                                 // no differencing, no second animation to keep in
-                                // step with the first.
-                                val slotsPerSecond = indicatorOffsetPx.velocity / slotWidthPx
+                                // step with the first. Stretch is normalised by
+                                // the slot, not the (possibly capped) pill width,
+                                // so travel feel stays the same at every density.
+                                val slotsPerSecond =
+                                    if (slotWidthPx > 0f) {
+                                        indicatorOffsetPx.velocity / slotWidthPx
+                                    } else {
+                                        0f
+                                    }
                                 val stretch =
                                     (slotsPerSecond / INDICATOR_STRETCH_FULL_SPEED)
                                         .absoluteValue

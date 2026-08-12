@@ -47,11 +47,12 @@ import kotlin.math.max
 /**
  * What the agent behind a [VoiceOrb] is currently doing.
  *
- * The orb never stops moving entirely — a frozen orb reads as a crashed agent —
- * but each state has its own tempo and reach.
+ * [Idle] is a static presence mark (Agent home readiness, etc.). Live turns —
+ * [Listening], [Speaking], [Thinking] — own the breath and spin so the GPU is
+ * not kept warm while nothing is happening.
  */
 public enum class VoiceOrbState {
-    /** Present but not engaged. Slow, shallow breathing. */
+    /** Present but not engaged. No motion — a status mark, not a live turn. */
     Idle,
 
     /** Listening to the user. Amplitude drives the rings. */
@@ -83,11 +84,12 @@ public enum class VoiceOrbState {
  * decays like a VU meter instead of flickering on every consonant.
  *
  * ### Motion budget
- * When [LocalGlassCapability] resolves to [GlassCapability.None] — battery
- * saver, a low-RAM device, or an explicit reduce-transparency override — the
- * infinite animations stop and the orb renders static. A perpetually animating
- * sphere is exactly the wrong thing to keep running on a device that just told
- * you it is trying to save power.
+ * Infinite breath/spin run only for live turns ([VoiceOrbState.Listening],
+ * [VoiceOrbState.Speaking], [VoiceOrbState.Thinking]). [VoiceOrbState.Idle] is
+ * static so a readiness badge on Agent home does not keep the GPU warm between
+ * tab switches. When [LocalGlassCapability] resolves to [GlassCapability.None]
+ * — battery saver, a low-RAM device, or an explicit reduce-transparency override —
+ * live turns freeze as well.
  *
  * ```
  * VoiceOrb(
@@ -120,7 +122,11 @@ public fun VoiceOrb(
     val motion = RikkaTheme.motion
     val glass = RikkaTheme.glass
     val capability = LocalGlassCapability.current
-    val animated = capability != GlassCapability.None
+    // Idle is a static badge on Agent home — breathing/spinning there keeps the
+    // GPU warm and makes tab switches feel like the orb is still "catching up".
+    // Motion is reserved for live Listening / Speaking turns.
+    val animated =
+        capability != GlassCapability.None && state != VoiceOrbState.Idle
 
     val style = rememberGlassStyle(level = GlassLevel.Regular, tint = accent)
 

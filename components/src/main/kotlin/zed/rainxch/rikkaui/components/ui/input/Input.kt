@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
@@ -171,6 +172,8 @@ public data class InputColorValues(
  * @param maxLength Maximum number of characters allowed; null for unlimited.
  * @param showCharCount When true and [maxLength] is set, displays a character counter.
  * @param colors Override resolved colors. Defaults to [InputDefaults.colors].
+ * @param shape Outline of the field; theme `md` by default. Pass a larger radius
+ *   when the input sits on glass and needs to match neighbouring lozenges.
  */
 @Composable
 public fun Input(
@@ -196,13 +199,13 @@ public fun Input(
     maxLength: Int? = null,
     showCharCount: Boolean = false,
     colors: InputColorValues = InputDefaults.colors(),
+    shape: Shape = RikkaTheme.shapes.md,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     val themeColors = RikkaTheme.colors
     val motion = RikkaTheme.motion
-    val shape = RikkaTheme.shapes.md
     val spacing = RikkaTheme.spacing
 
     // ─── Resolve border color & animation ─────────────────

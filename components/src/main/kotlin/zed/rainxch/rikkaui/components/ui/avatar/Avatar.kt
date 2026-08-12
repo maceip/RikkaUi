@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -88,6 +89,8 @@ public enum class AvatarStatus {
  * @param animation [AvatarAnimation] entrance effect (FadeIn, Scale, or None).
  * @param status Optional [AvatarStatus] that renders a colored dot indicator.
  * @param label Accessibility content description; defaults to [fallback] text.
+ * @param containerColor Fill behind the initials. Defaults to [RikkaTheme.colors.muted];
+ *   pass a translucent tint over glass so the avatar does not punch a black hole.
  */
 @Composable
 public fun Avatar(
@@ -97,9 +100,11 @@ public fun Avatar(
     animation: AvatarAnimation = AvatarAnimation.FadeIn,
     status: AvatarStatus? = null,
     label: String? = null,
+    containerColor: Color = Color.Unspecified,
 ) {
     val resolved = resolveSizeValues(size)
     val shape = RikkaTheme.shapes.full
+    val fill = if (containerColor.isSpecified) containerColor else RikkaTheme.colors.muted
     val motion = RikkaTheme.motion
 
     // Entrance animation state
@@ -159,7 +164,7 @@ public fun Avatar(
                     alpha = animAlpha
                     scaleX = animScale
                     scaleY = animScale
-                }.background(RikkaTheme.colors.muted, shape)
+                }.background(fill, shape)
                 .clip(shape)
                 .then(
                     if (statusColor != null) {

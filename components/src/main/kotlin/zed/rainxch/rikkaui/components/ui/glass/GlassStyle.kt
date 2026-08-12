@@ -18,6 +18,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -111,6 +112,9 @@ public val LocalGlassDepth: ProvidableCompositionLocal<Int> = staticCompositionL
  *   level's own refraction amount.
  * @property pressHighlight Specular alpha added while held.
  * @property pressLightShift Degrees the specular sweeps while held.
+ * @property pressSquash Anisotropic squash while held (X grows, Y shrinks).
+ * @property pressSinkPx How far the surface sinks in pixels while held.
+ * @property pressInnerShadow Extra inner-shadow depth while held, as a fraction.
  * @property capability What this device can actually draw.
  * @property fallbackColor Opaque surface painted when [capability] is
  *   [GlassCapability.None].
@@ -129,6 +133,9 @@ public data class GlassStyle(
     val pressRefraction: Float,
     val pressHighlight: Float,
     val pressLightShift: Float,
+    val pressSquash: Float,
+    val pressSinkPx: Float,
+    val pressInnerShadow: Float,
     val capability: GlassCapability,
     val fallbackColor: Color,
     val fallbackBorderColor: Color,
@@ -166,8 +173,9 @@ public fun rememberGlassStyle(
     val glass = RikkaTheme.glass
     val colors = RikkaTheme.colors
     val elevation = RikkaTheme.elevation
+    val density = LocalDensity.current
 
-    return remember(glass, colors, elevation, level, tint, treatment, capability, depth) {
+    return remember(glass, colors, elevation, level, tint, treatment, capability, depth, density) {
         val base =
             when (level.stepDown(depth)) {
                 GlassLevel.Subtle -> glass.subtle
@@ -196,13 +204,19 @@ public fun rememberGlassStyle(
                 base
             }
 
-        // No refracting edge to define the boundary, so lean harder on the tint
-        // and the rim to keep the surface readable as a shape.
+        // No refracting edge to define the boundary, so lean harder on the tint,
+        // rim, dome, and painted bevel — those are what still describe the hill
+        // when the AGSL lens cannot run.
         val capabilityAdjusted =
             if (capability == GlassCapability.Blur) {
                 nested.copy(
                     tintAlpha = (nested.tintAlpha * 1.3f).coerceAtMost(0.6f),
                     highlightAlpha = (nested.highlightAlpha * 1.15f).coerceAtMost(1f),
+                    domeStrength = (nested.domeStrength * 1.4f).coerceAtMost(0.32f),
+                    bevelWidth = nested.bevelWidth * 1.2f,
+                    bevelLightAlpha = (nested.bevelLightAlpha * 1.35f).coerceAtMost(0.6f),
+                    bevelShadowAlpha = (nested.bevelShadowAlpha * 1.3f).coerceAtMost(0.45f),
+                    innerShadowAlpha = (nested.innerShadowAlpha * 1.15f).coerceAtMost(0.45f),
                 )
             } else {
                 nested
@@ -235,6 +249,9 @@ public fun rememberGlassStyle(
             pressRefraction = glass.pressRefraction,
             pressHighlight = glass.pressHighlight,
             pressLightShift = glass.pressLightShift,
+            pressSquash = glass.pressSquash,
+            pressSinkPx = with(density) { glass.pressSink.toPx() },
+            pressInnerShadow = glass.pressInnerShadow,
             capability = capability,
             fallbackColor =
                 if (treatment == GlassTreatment.Smoked && tint.isSpecified) {
@@ -256,30 +273,37 @@ public fun rememberGlassStyle(
  *
  * @property pressFraction `0f` at rest, `1f` fully held. Read from draw-phase
  *   lambdas to drive refraction and specular.
- * @property layerBlock Scale transform for `layerBlock` on [Modifier.glassSurface].
+ * @property layerBlock Silicone deform: isotropic sink plus anisotropic squash
+ *   (X grows, Y shrinks) and a slight translate into the scene.
  */
 @Stable
 public class GlassPressState internal constructor(
     private val fraction: State<Float>,
     private val pressScale: Float,
+    private val pressSquash: Float,
+    private val pressSinkPx: Float,
 ) {
     public val pressFraction: () -> Float = { fraction.value }
 
     public val layerBlock: GraphicsLayerScope.() -> Unit = {
-        val scale = lerp(1f, pressScale, fraction.value)
-        scaleX = scale
-        scaleY = scale
+        val f = fraction.value
+        val base = lerp(1f, pressScale, f)
+        val squash = pressSquash * f
+        scaleX = base * (1f + squash)
+        scaleY = base * (1f - squash)
+        translationY = pressSinkPx * f
     }
 }
 
 /**
  * Tracks presses on [interactionSource] and animates them into a [GlassPressState].
  *
- * Held glass does three things at once: it sinks, it refracts harder as the
- * "slab" compresses, and its specular sweeps as the light angle changes relative
- * to the deformed surface. All three run off this one fraction, so they stay in
- * step, and all three are read from the draw and layer phases — pressing a glass
- * button recomposes nothing.
+ * Held glass does three things at once: it sinks and squashes like silicone, it
+ * refracts harder as the "slab" compresses (Full tier), and its specular sweeps
+ * as the light angle changes relative to the deformed surface. All three run off
+ * this one fraction. When a [LocalGlassLensPolicy] is in scope, the press also
+ * promotes live lenses for a beat so Blur-idle chrome still gets a Full edge
+ * under the finger.
  *
  * @param interactionSource Source to observe; the same one passed to `clickable`.
  * @param enabled Whether presses should register at all.
@@ -290,7 +314,10 @@ public fun rememberGlassPressState(
     enabled: Boolean = true,
 ): GlassPressState {
     val motion = RikkaTheme.motion
+    val glass = RikkaTheme.glass
+    val density = LocalDensity.current
     val isPressed by interactionSource.collectIsPressedAsState()
+    GlassLensPressPromoter(interactionSource = interactionSource, enabled = enabled)
 
     val fraction =
         animateFloatAsState(
@@ -299,7 +326,15 @@ public fun rememberGlassPressState(
             label = "glassPress",
         )
 
-    return remember(fraction, motion.pressScaleSubtle) { GlassPressState(fraction, motion.pressScaleSubtle) }
+    val sinkPx = with(density) { glass.pressSink.toPx() }
+    return remember(fraction, motion.pressScaleSubtle, glass.pressSquash, sinkPx) {
+        GlassPressState(
+            fraction = fraction,
+            pressScale = motion.pressScaleSubtle,
+            pressSquash = glass.pressSquash,
+            pressSinkPx = sinkPx,
+        )
+    }
 }
 
 // ─── Defaults ───────────────────────────────────────────────

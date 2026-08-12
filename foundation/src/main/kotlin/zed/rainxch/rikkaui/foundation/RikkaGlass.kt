@@ -75,6 +75,11 @@ import androidx.compose.ui.unit.dp
  *   [RikkaGlass.tint], so it frosts white on plain glass and green on green
  *   glass — the frost belongs to the material, not to a fixed colour. `0f`
  *   disables it.
+ * @property bevelWidth Width of the painted edge hill that survives when the
+ *   AGSL lens cannot run (Blur tier). Matches the circular profile of the Full
+ *   refraction band so both tiers agree about the shape of the rim.
+ * @property bevelLightAlpha Strength of the lit lip along the edge hill.
+ * @property bevelShadowAlpha Strength of the shaded lip opposite the light.
  */
 @Immutable
 public data class RikkaGlassLevel(
@@ -96,6 +101,9 @@ public data class RikkaGlassLevel(
     val domeStrength: Float = 0f,
     val frostFraction: Float = 0.1f,
     val frostAlpha: Float = 0f,
+    val bevelWidth: Dp = 0.dp,
+    val bevelLightAlpha: Float = 0f,
+    val bevelShadowAlpha: Float = 0f,
 )
 
 /**
@@ -146,6 +154,12 @@ public data class RikkaGlassLevel(
  *   "liquid" in liquid glass: the slab visibly squeezes under the finger.
  * @property pressHighlight Specular alpha added while a glass control is held.
  * @property pressLightShift Degrees the specular sweeps while a control is held.
+ * @property pressSquash Anisotropic squash while held — X grows, Y shrinks —
+ *   so a finger on silicone reads as deformation, not as a uniform shrink.
+ * @property pressSink How far the surface translates into the scene while held,
+ *   seating it in Z against its drop shadow.
+ * @property pressInnerShadow Extra inner-shadow depth, as a fraction of the
+ *   level's own radius/alpha, while held — the rim thickens as the slab compresses.
  */
 @Immutable
 public data class RikkaGlass(
@@ -158,6 +172,9 @@ public data class RikkaGlass(
     val pressRefraction: Float = 0.6f,
     val pressHighlight: Float = 0.2f,
     val pressLightShift: Float = 30f,
+    val pressSquash: Float = 0.07f,
+    val pressSink: Dp = 2.dp,
+    val pressInnerShadow: Float = 0.45f,
     val subtle: RikkaGlassLevel,
     val regular: RikkaGlassLevel,
     val prominent: RikkaGlassLevel,
@@ -205,9 +222,12 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 // Small, but not absent: a dial key with no drop shadow at all
                 // is painted onto the surface rather than resting on it.
                 shadowRadius = 6.dp,
-                domeStrength = if (isDark) 0.10f else 0.09f,
+                domeStrength = if (isDark) 0.14f else 0.12f,
                 frostFraction = 0.1f,
                 frostAlpha = if (isDark) 0.14f else 0.17f,
+                bevelWidth = 3.5.dp,
+                bevelLightAlpha = if (isDark) 0.32f else 0.38f,
+                bevelShadowAlpha = if (isDark) 0.22f else 0.18f,
             ),
         regular =
             RikkaGlassLevel(
@@ -225,9 +245,12 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 innerShadowRadius = 9.dp,
                 innerShadowAlpha = if (isDark) 0.28f else 0.18f,
                 shadowRadius = 24.dp,
-                domeStrength = if (isDark) 0.13f else 0.11f,
+                domeStrength = if (isDark) 0.18f else 0.15f,
                 frostFraction = 0.1f,
                 frostAlpha = if (isDark) 0.20f else 0.24f,
+                bevelWidth = 6.dp,
+                bevelLightAlpha = if (isDark) 0.40f else 0.46f,
+                bevelShadowAlpha = if (isDark) 0.28f else 0.22f,
             ),
         prominent =
             RikkaGlassLevel(
@@ -245,9 +268,12 @@ public fun rikkaGlass(isDark: Boolean): RikkaGlass =
                 innerShadowRadius = 14.dp,
                 innerShadowAlpha = if (isDark) 0.32f else 0.20f,
                 shadowRadius = 48.dp,
-                domeStrength = if (isDark) 0.16f else 0.14f,
+                domeStrength = if (isDark) 0.22f else 0.18f,
                 frostFraction = 0.1f,
                 frostAlpha = if (isDark) 0.26f else 0.30f,
+                bevelWidth = 8.dp,
+                bevelLightAlpha = if (isDark) 0.48f else 0.52f,
+                bevelShadowAlpha = if (isDark) 0.32f else 0.26f,
             ),
     )
 
@@ -335,6 +361,10 @@ public object RikkaGlassPresets {
             dispersion = false,
             innerShadowRadius = 0.dp,
             innerShadowAlpha = 0f,
+            bevelWidth = 0.dp,
+            bevelLightAlpha = 0f,
+            bevelShadowAlpha = 0f,
+            domeStrength = domeStrength * 0.5f,
         )
 }
 

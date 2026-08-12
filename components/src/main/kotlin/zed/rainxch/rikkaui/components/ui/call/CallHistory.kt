@@ -1,11 +1,19 @@
 package zed.rainxch.rikkaui.components.ui.call
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.kyant.backdrop.Backdrop
 import zed.rainxch.rikkaui.components.ui.avatar.Avatar
 import zed.rainxch.rikkaui.components.ui.avatar.AvatarAnimation
@@ -40,6 +48,9 @@ public enum class CallDirection {
  * Missed calls colour their direction icon with `destructive`, which is the only
  * thing that distinguishes them at a glance in a long list.
  *
+ * Pass [embedded] = true when the row sits inside a parent glass tray or panel —
+ * the parent is then the only backdrop sampler, and this row is furniture on it.
+ *
  * ```
  * CallHistoryItem(
  *     name = "Ada Lovelace",
@@ -64,6 +75,9 @@ public enum class CallDirection {
  * @param onClick Invoked when the card itself is tapped.
  * @param onDelete Invoked when the row is swiped from the start edge. Null hides the action.
  * @param onCallBack Invoked when the row is swiped from the end edge. Null hides the action.
+ * @param level Glass depth when [embedded] is false. Defaults to [GlassLevel.Subtle].
+ * @param embedded When true, skips its own glass surface so the row can sit inside a
+ *   parent tray / panel. The parent is then the only sampler.
  * @param backdrop What shows through the card; from [LocalGlassBackdrop] by default.
  */
 @Composable
@@ -79,6 +93,8 @@ public fun CallHistoryItem(
     onClick: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onCallBack: (() -> Unit)? = null,
+    level: GlassLevel = GlassLevel.Subtle,
+    embedded: Boolean = false,
     backdrop: Backdrop = LocalGlassBackdrop.current,
 ) {
     val colors = RikkaTheme.colors
@@ -111,50 +127,99 @@ public fun CallHistoryItem(
         endActions = listOfNotNull(callBackAction),
         shape = shape,
     ) {
-        GlassCard(
-            level = GlassLevel.Regular,
-            shape = shape,
-            backdrop = backdrop,
-            onClick = onClick,
+        if (embedded) {
+            val interaction = remember { MutableInteractionSource() }
+            CallHistoryRowContent(
+                name = name,
+                detail = detail,
+                timestamp = timestamp,
+                direction = direction,
+                badge = badge,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (onClick != null) {
+                                Modifier.clickable(
+                                    interactionSource = interaction,
+                                    indication = null,
+                                    role = Role.Button,
+                                    onClick = onClick,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ).padding(GlassDefaults.contentPadding())
+                        .semantics {
+                            if (name.isNotEmpty()) contentDescription = name
+                        },
+            )
+        } else {
+            GlassCard(
+                level = level,
+                shape = shape,
+                backdrop = backdrop,
+                onClick = onClick,
+                label = name,
+            ) {
+                CallHistoryRowContent(
+                    name = name,
+                    detail = detail,
+                    timestamp = timestamp,
+                    direction = direction,
+                    badge = badge,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CallHistoryRowContent(
+    name: String,
+    detail: String,
+    timestamp: String,
+    direction: CallDirection,
+    badge: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = RikkaTheme.colors
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // `fallback` renders verbatim, so it must be initials, not the
+        // name. No entrance animation either: a row in a list should not
+        // fade its avatar in on its own — the list's enter animation owns that.
+        Avatar(
+            fallback = initialsOf(name),
+            size = AvatarSize.Default,
+            animation = AvatarAnimation.None,
             label = name,
+        )
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.xs),
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // `fallback` renders verbatim, so it must be initials, not the
-                // name. No entrance animation either: a row in a list should not
-                // fade its avatar in on its own — the list's enter animation owns that.
-                Avatar(
-                    fallback = initialsOf(name),
-                    size = AvatarSize.Default,
-                    animation = AvatarAnimation.None,
-                    label = name,
-                )
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.xs),
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(RikkaTheme.spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        DirectionIcon(direction)
-                        Text(text = name, variant = TextVariant.Large)
-                        if (badge.isNotEmpty()) {
-                            Badge(text = badge, variant = BadgeVariant.Secondary, size = BadgeSize.Sm)
-                        }
-                    }
-                    if (detail.isNotEmpty()) {
-                        Text(text = detail, variant = TextVariant.Muted)
-                    }
-                }
-
-                if (timestamp.isNotEmpty()) {
-                    Text(text = timestamp, variant = TextVariant.Small, color = colors.onMuted)
+                DirectionIcon(direction)
+                Text(text = name, variant = TextVariant.Large)
+                if (badge.isNotEmpty()) {
+                    Badge(text = badge, variant = BadgeVariant.Secondary, size = BadgeSize.Sm)
                 }
             }
+            if (detail.isNotEmpty()) {
+                Text(text = detail, variant = TextVariant.Muted)
+            }
+        }
+
+        if (timestamp.isNotEmpty()) {
+            Text(text = timestamp, variant = TextVariant.Small, color = colors.onMuted)
         }
     }
 }

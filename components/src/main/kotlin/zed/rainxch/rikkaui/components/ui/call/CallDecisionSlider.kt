@@ -50,6 +50,15 @@ public object CallDecisionSliderDefaults {
     /** Total height reserved: the horizontal track plus the downward one below it. */
     public val Height: Dp = 210.dp
 
+    /**
+     * Height reserved when there is no transfer to offer.
+     *
+     * Only the horizontal track is drawn, so the control gives back the space
+     * the downward track would have occupied rather than reserving a gap where
+     * a third decision used to be.
+     */
+    public val HeightWithoutTransfer: Dp = 118.dp
+
     /** Diameter of the draggable thumb; also its touch target. */
     public val ThumbSize: Dp = 60.dp
 
@@ -72,8 +81,14 @@ public object CallDecisionSliderDefaults {
 
     public val TransferTrackHeight: Dp = 122.dp
 
-    /** Width of the horizontal track, as a fraction of the control. */
-    public val TrackWidthFraction: Float = 0.78f
+    /**
+     * Width of the horizontal decision track.
+     *
+     * Sized from the thumb travel limits rather than a fraction of the parent,
+     * so an unfolded Fold does not stretch the track while the gesture still
+     * commits in the first 76dp.
+     */
+    public val TrackWidth: Dp = HorizontalLimit * 2 + ThumbSize + 48.dp
 
     public val DeclineLabel: String = "Decline"
 
@@ -92,6 +107,12 @@ public object CallDecisionSliderDefaults {
  * Slide the thumb left to decline, right to answer, or down to hand the call to
  * an agent. This is the lock-screen presentation of an incoming call: a drag is
  * deliberate in a way a tap is not, which is what keeps a pocket from answering.
+ *
+ * A null [onTransfer] makes the control a two-way one: the downward track, its
+ * label, its gesture and its accessibility action all go away, and the height
+ * shrinks to [CallDecisionSliderDefaults.HeightWithoutTransfer]. A track that is
+ * drawn but declines to commit is worse than no track at all — the user has
+ * already made the gesture by the time nothing happens.
  *
  * Because a drag is also unusable one-handed — and unusable at all for anyone
  * who cannot make it — the same three decisions are published as custom
@@ -116,18 +137,21 @@ public object CallDecisionSliderDefaults {
  *
  * @param onDecline Invoked when the thumb is committed to the start edge.
  * @param onAnswer Invoked when the thumb is committed to the end edge.
- * @param onTransfer Invoked when the thumb is committed downward.
  * @param modifier [Modifier] applied to the root Box.
+ * @param onTransfer Invoked when the thumb is committed downward. Null removes
+ *   the downward decision entirely rather than leaving a dead track.
  * @param enabled Whether the control accepts the gesture and its actions.
  * @param declineLabel Visible label at the start edge.
  * @param answerLabel Visible label at the end edge.
- * @param transferLabel Visible label below the downward track.
+ * @param transferLabel Visible label below the downward track. Unused when
+ *   [onTransfer] is null.
  * @param thumbLabel Short verb drawn on the thumb itself.
  * @param contentDescription What the whole control announces. The default names
- *   the three directions using the visible labels.
+ *   the directions the control actually offers, using the visible labels.
  * @param declineActionLabel Name of the custom accessibility action that declines.
  * @param answerActionLabel Name of the custom accessibility action that answers.
- * @param transferActionLabel Name of the custom accessibility action that transfers.
+ * @param transferActionLabel Name of the custom accessibility action that
+ *   transfers. Unused when [onTransfer] is null.
  * @param trackTint Colour washed over the horizontal decline/answer track.
  * @param transferTrackTint Colour washed over the downward transfer track.
  * @param thumbTint Colour the thumb's smoked glass is dyed with.
@@ -138,15 +162,20 @@ public object CallDecisionSliderDefaults {
 public fun CallDecisionSlider(
     onDecline: () -> Unit,
     onAnswer: () -> Unit,
-    onTransfer: () -> Unit,
     modifier: Modifier = Modifier,
+    onTransfer: (() -> Unit)? = null,
     enabled: Boolean = true,
     declineLabel: String = CallDecisionSliderDefaults.DeclineLabel,
     answerLabel: String = CallDecisionSliderDefaults.AnswerLabel,
     transferLabel: String = CallDecisionSliderDefaults.TransferLabel,
     thumbLabel: String = CallDecisionSliderDefaults.ThumbLabel,
     contentDescription: String =
-        "Incoming call control. Slide left to $declineLabel, right to $answerLabel, or down for $transferLabel.",
+        if (onTransfer == null) {
+            "Incoming call control. Slide left to $declineLabel or right to $answerLabel."
+        } else {
+            "Incoming call control. Slide left to $declineLabel, right to $answerLabel, " +
+                "or down for $transferLabel."
+        },
     declineActionLabel: String = declineLabel,
     answerActionLabel: String = answerLabel,
     transferActionLabel: String = transferLabel,
@@ -188,45 +217,62 @@ public fun CallDecisionSlider(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(CallDecisionSliderDefaults.Height)
-                .semantics(mergeDescendants = true) {
+                .height(
+                    if (onTransfer == null) {
+                        CallDecisionSliderDefaults.HeightWithoutTransfer
+                    } else {
+                        CallDecisionSliderDefaults.Height
+                    },
+                ).semantics(mergeDescendants = true) {
                     this.contentDescription = contentDescription
                     if (!enabled) disabled()
                     customActions =
-                        listOf(
-                            CustomAccessibilityAction(declineActionLabel) {
-                                onDecline()
-                                true
-                            },
-                            CustomAccessibilityAction(answerActionLabel) {
-                                onAnswer()
-                                true
-                            },
-                            CustomAccessibilityAction(transferActionLabel) {
-                                onTransfer()
-                                true
-                            },
-                        )
+                        buildList {
+                            add(
+                                CustomAccessibilityAction(declineActionLabel) {
+                                    onDecline()
+                                    true
+                                },
+                            )
+                            add(
+                                CustomAccessibilityAction(answerActionLabel) {
+                                    onAnswer()
+                                    true
+                                },
+                            )
+                            if (onTransfer != null) {
+                                add(
+                                    CustomAccessibilityAction(transferActionLabel) {
+                                        onTransfer()
+                                        true
+                                    },
+                                )
+                            }
+                        }
                 }.pointerInput(enabled, onDecline, onAnswer, onTransfer) {
                     if (!enabled) return@pointerInput
                     detectDragGestures(
                         onDragCancel = { release() },
                         onDragEnd = {
                             val offset = drag.value
+                            val transfer = onTransfer
                             when {
                                 offset.x <= -commitDistance -> commit(onDecline)
                                 offset.x >= commitDistance -> commit(onAnswer)
-                                offset.y >= commitDistance -> commit(onTransfer)
+                                transfer != null && offset.y >= commitDistance -> commit(transfer)
                                 else -> release()
                             }
                         },
                     ) { change, amount ->
                         change.consume()
                         // One axis at a time: a diagonal drag that leaked into
-                        // both would leave the thumb between two decisions.
+                        // both would leave the thumb between two decisions. With
+                        // no transfer there is only one axis, so a vertical drag
+                        // still tracks horizontally rather than pinning the thumb
+                        // against a decision that does not exist.
                         val candidate = drag.value + amount
                         val next =
-                            if (abs(candidate.x) > abs(candidate.y)) {
+                            if (onTransfer == null || abs(candidate.x) > abs(candidate.y)) {
                                 Offset(candidate.x.coerceIn(-horizontalLimit, horizontalLimit), 0f)
                             } else {
                                 Offset(0f, candidate.y.coerceIn(0f, downwardLimit))
@@ -240,7 +286,7 @@ public fun CallDecisionSlider(
                 Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 38.dp)
-                    .fillMaxWidth(CallDecisionSliderDefaults.TrackWidthFraction)
+                    .width(CallDecisionSliderDefaults.TrackWidth)
                     .height(CallDecisionSliderDefaults.TrackHeight),
             level = GlassLevel.Subtle,
             shape = CircleShape,
@@ -248,19 +294,21 @@ public fun CallDecisionSlider(
             tint = trackTint,
             contentPadding = PaddingValues(0.dp),
         ) {}
-        GlassSurface(
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 70.dp)
-                    .width(CallDecisionSliderDefaults.TrackHeight)
-                    .height(CallDecisionSliderDefaults.TransferTrackHeight),
-            level = GlassLevel.Subtle,
-            shape = CircleShape,
-            backdrop = backdrop,
-            tint = transferTrackTint,
-            contentPadding = PaddingValues(0.dp),
-        ) {}
+        if (onTransfer != null) {
+            GlassSurface(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 70.dp)
+                        .width(CallDecisionSliderDefaults.TrackHeight)
+                        .height(CallDecisionSliderDefaults.TransferTrackHeight),
+                level = GlassLevel.Subtle,
+                shape = CircleShape,
+                backdrop = backdrop,
+                tint = transferTrackTint,
+                contentPadding = PaddingValues(0.dp),
+            ) {}
+        }
 
         Text(
             text = declineLabel,
@@ -280,15 +328,17 @@ public fun CallDecisionSlider(
             color = colors.success,
             style = emphasis,
         )
-        Text(
-            text = transferLabel,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 2.dp),
-            color = colors.onPrimaryTinted,
-            style = emphasis,
-        )
+        if (onTransfer != null) {
+            Text(
+                text = transferLabel,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 2.dp),
+                color = colors.onPrimaryTinted,
+                style = emphasis,
+            )
+        }
 
         // The thumb's drop shadow comes from the prominent glass level rather
         // than a hand-set elevation, so it seats itself the way every other

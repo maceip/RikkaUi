@@ -1,7 +1,6 @@
 package zed.rainxch.rikkaui.components.ui.call
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -153,7 +152,9 @@ public fun GlassDialpad(
                     .rememberGlassSurface(
                         backdrop = backdrop,
                         style = style,
-                        shape = RoundedCornerShape(percent = 28),
+                        // Fully stadium ends — same circle family as the keys,
+                        // not a squircle card with mismatched corner radius.
+                        shape = RoundedCornerShape(percent = 50),
                     ).padding(spacing),
             verticalArrangement = Arrangement.spacedBy(spacing),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -258,16 +259,13 @@ private fun DialpadKeyButton(
                     ),
             )
         }
-    val rimAlpha = if (style.capability == GlassCapability.None && sampleGlass) 0f else 0.45f
-    val rimBrush =
-        remember(rimAlpha) {
-            Brush.linearGradient(
-                listOf(
-                    Color.White.copy(alpha = rimAlpha),
-                    Color.White.copy(alpha = 0f),
-                ),
-            )
+    val rimAlpha =
+        if (style.capability == GlassCapability.None && sampleGlass) {
+            0f
+        } else {
+            style.tokens.highlightAlpha.coerceAtMost(0.7f)
         }
+    val lightAngle = style.lightAngle
 
     val description = if (key.letters.isEmpty()) key.digit.toString() else "${key.digit} ${key.letters}"
 
@@ -294,22 +292,49 @@ private fun DialpadKeyButton(
                     role = Role.Button
                 }.then(glassModifier)
                 .drawWithCache {
+                    // Tight specular — a bead highlight, not a face-wide wash.
                     val lit =
                         Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.28f), Color.Transparent),
-                            center = Offset(this.size.width * 0.32f, this.size.height * 0.26f),
-                            radius = this.size.maxDimension * 0.75f,
+                            colors = listOf(Color.White.copy(alpha = 0.34f), Color.Transparent),
+                            center = Offset(this.size.width * 0.30f, this.size.height * 0.24f),
+                            radius = this.size.maxDimension * 0.48f,
                         )
-                    onDrawBehind {
+                    val radians = Math.toRadians(lightAngle.toDouble())
+                    val dx = kotlin.math.cos(radians).toFloat()
+                    val dy = kotlin.math.sin(radians).toFloat()
+                    val rim =
+                        Brush.linearGradient(
+                            colors =
+                                listOf(
+                                    Color.White.copy(alpha = rimAlpha),
+                                    Color.White.copy(alpha = 0f),
+                                ),
+                            start =
+                                Offset(
+                                    this.size.width * (0.5f - dx * 0.5f),
+                                    this.size.height * (0.5f - dy * 0.5f),
+                                ),
+                            end =
+                                Offset(
+                                    this.size.width * (0.5f + dx * 0.5f),
+                                    this.size.height * (0.5f + dy * 0.5f),
+                                ),
+                        )
+                    onDrawWithContent {
                         drawCircle(lit)
-                        val brightness = press.pressFraction() * 0.22f
+                        val brightness = press.pressFraction() * 0.2f
                         if (brightness > 0f) drawCircle(Color.White.copy(alpha = brightness))
+                        drawContent()
+                        if (rimAlpha > 0f) {
+                            drawCircle(
+                                brush = rim,
+                                style =
+                                    androidx.compose.ui.graphics.drawscope
+                                        .Stroke(width = 1.dp.toPx()),
+                            )
+                        }
                     }
-                }.border(
-                    width = 1.dp,
-                    brush = rimBrush,
-                    shape = CircleShape,
-                ).clip(CircleShape)
+                }.clip(CircleShape)
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,

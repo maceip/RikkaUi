@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -46,10 +47,16 @@ private val AtRest: () -> Float = { 0f }
 private val DEGREES_TO_RADIANS: Float = (PI / 180.0).toFloat()
 
 /** How far the dome's poles sit from the centre, as a fraction of the surface. */
-private const val DOME_POLE_OFFSET: Float = 0.32f
+private const val DOME_POLE_OFFSET: Float = 0.45f
 
 /** Dome gradient reach, as a fraction of the surface's longest dimension. */
-private const val DOME_RADIUS_SCALE: Float = 0.72f
+private const val DOME_RADIUS_SCALE: Float = 0.52f
+
+/** Bevel lip reach from the lit/dark edge toward centre. */
+private const val BEVEL_EDGE_OFFSET: Float = 0.55f
+
+/** Bevel gradient radius as a fraction of the shorter surface side. */
+private const val BEVEL_RADIUS_SCALE: Float = 0.55f
 
 // ─── Modifier ───────────────────────────────────────────────
 
@@ -152,17 +159,36 @@ public fun Modifier.glassSurface(
             )
         },
         shadow = {
-            if (tokens.shadowRadius > 0.dp) Shadow(radius = tokens.shadowRadius, color = style.shadowColor) else null
+            if (tokens.shadowRadius <= 0.dp) {
+                null
+            } else {
+                val press = pressFraction()
+                val radians = style.lightAngle * DEGREES_TO_RADIANS
+                // Shadow falls away from the light — opposite the lit pole.
+                val dist = tokens.shadowRadius * (0.22f * (1f + press * 0.3f))
+                Shadow(
+                    radius = tokens.shadowRadius,
+                    offset = DpOffset(dist * cos(radians), dist * sin(radians)),
+                    color = style.shadowColor,
+                )
+            }
         },
         innerShadow = {
-            if (tokens.innerShadowRadius > 0.dp && tokens.innerShadowAlpha > 0f) {
-                InnerShadow(
-                    radius = tokens.innerShadowRadius,
-                    color = style.innerShadowColor,
-                    alpha = tokens.innerShadowAlpha,
-                )
-            } else {
+            if (tokens.innerShadowRadius <= 0.dp || tokens.innerShadowAlpha <= 0f) {
                 null
+            } else {
+                val press = pressFraction()
+                val thicken = 1f + press * style.pressInnerShadow
+                val radians = style.lightAngle * DEGREES_TO_RADIANS
+                // Inset toward the light so the shaded lip reads as thickness.
+                val bevel =
+                    maxOf(tokens.bevelWidth, tokens.innerShadowRadius * 0.35f) * 0.5f
+                InnerShadow(
+                    radius = tokens.innerShadowRadius * thicken,
+                    offset = DpOffset(-bevel * cos(radians), -bevel * sin(radians)),
+                    color = style.innerShadowColor,
+                    alpha = (tokens.innerShadowAlpha * thicken).coerceAtMost(0.55f),
+                )
             }
         },
         layerBlock = layerBlock,
@@ -172,20 +198,56 @@ public fun Modifier.glassSurface(
                 drawRect(style.tint.copy(alpha = tokens.tintAlpha))
             }
 
-            // Dome. The lens shader bends only the edge band, so the face of the
-            // slab stays optically flat and reads as a cut-out. A bloom on the
-            // lit side plus a falloff opposite it curves that face into a cap.
-            // Both poles are placed from style.lightAngle rather than from a
-            // constant, so the dome, the specular rim, and the drop shadow all
-            // agree about where the light is. Light the dome separately and the
-            // stack stops reading as one lit object.
+            val radians = style.lightAngle * DEGREES_TO_RADIANS
+            // +x is right and +y is DOWN in DrawScope, while lightAngle is
+            // measured counter-clockwise from +x in scene space; negating
+            // both puts the lit pole up-left at the default 45f.
+            val dx = -cos(radians)
+            val dy = -sin(radians)
+
+            // Edge hills. Survives at Blur when the AGSL lens cannot run: a lit
+            // lip and a shaded lip aimed by lightAngle, so trays and keys still
+            // read as molasses globes rather than frosted acrylic cards.
+            if (tokens.bevelWidth > 0.dp &&
+                (tokens.bevelLightAlpha > 0f || tokens.bevelShadowAlpha > 0f)
+            ) {
+                val litEdge =
+                    Offset(
+                        size.width * (0.5f + dx * BEVEL_EDGE_OFFSET),
+                        size.height * (0.5f + dy * BEVEL_EDGE_OFFSET),
+                    )
+                val darkEdge =
+                    Offset(
+                        size.width * (0.5f - dx * BEVEL_EDGE_OFFSET),
+                        size.height * (0.5f - dy * BEVEL_EDGE_OFFSET),
+                    )
+                val bevelRadius = size.minDimension * BEVEL_RADIUS_SCALE
+                if (tokens.bevelLightAlpha > 0f) {
+                    drawRect(
+                        Brush.radialGradient(
+                            0f to Color.White.copy(alpha = tokens.bevelLightAlpha),
+                            0.35f to Color.White.copy(alpha = tokens.bevelLightAlpha * 0.28f),
+                            0.6f to Color.Transparent,
+                            center = litEdge,
+                            radius = bevelRadius,
+                        ),
+                    )
+                }
+                if (tokens.bevelShadowAlpha > 0f) {
+                    drawRect(
+                        Brush.radialGradient(
+                            0f to Color.Black.copy(alpha = tokens.bevelShadowAlpha),
+                            0.45f to Color.Transparent,
+                            center = darkEdge,
+                            radius = bevelRadius,
+                        ),
+                    )
+                }
+            }
+
+            // Dome. Poles pushed out and the radius tightened so the ramp
+            // accelerates toward the silhouette — a cap, not a diagonal sheen.
             if (tokens.domeStrength > 0f) {
-                val radians = style.lightAngle * DEGREES_TO_RADIANS
-                // +x is right and +y is DOWN in DrawScope, while lightAngle is
-                // measured counter-clockwise from +x in scene space; negating
-                // both puts the lit pole up-left at the default 45f.
-                val dx = -cos(radians)
-                val dy = -sin(radians)
                 val litCenter =
                     Offset(
                         size.width * (0.5f + dx * DOME_POLE_OFFSET),
@@ -200,7 +262,8 @@ public fun Modifier.glassSurface(
                 drawRect(
                     Brush.radialGradient(
                         0f to Color.White.copy(alpha = tokens.domeStrength),
-                        0.5f to Color.White.copy(alpha = tokens.domeStrength * 0.28f),
+                        0.45f to Color.White.copy(alpha = tokens.domeStrength * 0.22f),
+                        0.85f to Color.Transparent,
                         1f to Color.Transparent,
                         center = litCenter,
                         radius = domeRadius,
@@ -209,6 +272,7 @@ public fun Modifier.glassSurface(
                 drawRect(
                     Brush.radialGradient(
                         0f to Color.Black.copy(alpha = tokens.domeStrength * 0.55f),
+                        0.7f to Color.Transparent,
                         1f to Color.Transparent,
                         center = darkCenter,
                         radius = domeRadius,
